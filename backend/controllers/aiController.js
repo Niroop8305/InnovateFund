@@ -1,8 +1,7 @@
 import axios from "axios";
 
-const OPENROUTER_API_KEY =
-  "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";
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
 
 // General OpenRouter AI chat endpoint (for /ai/chat and /ai/openrouter-chat)
 export const openrouterChat = async (req, res) => {

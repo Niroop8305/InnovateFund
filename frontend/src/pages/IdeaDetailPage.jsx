@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -18,6 +18,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { api } from "../services/api";
+import { Bot, X } from "lucide-react";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
@@ -32,6 +33,40 @@ const IdeaDetailPage = () => {
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [investmentTerms, setInvestmentTerms] = useState("");
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Helper: Build full context string for AI
+  const buildIdeaContext = () => {
+    if (!idea) return "";
+    let context = `Idea Title: ${idea.title}\n`;
+    context += `Description: ${idea.description}\n`;
+    context += `Category: ${idea.category}\n`;
+    context += `Stage: ${idea.stage}\n`;
+    context += `Funding Goal: ${idea.fundingGoal}\n`;
+    context += `Current Funding: ${idea.currentFunding}\n`;
+    context += `Impact Score: ${idea.impactScore}\n`;
+    if (idea.tags && idea.tags.length > 0)
+      context += `Tags: ${idea.tags.join(", ")}\n`;
+    if (idea.attachments && idea.attachments.length > 0)
+      context += `Attachments: ${idea.attachments
+        .map((a) => a.fileName)
+        .join(", ")}\n`;
+    if (idea.creator) context += `Creator: ${idea.creator.name}\n`;
+    return context;
+  };
+
+  // Navigate to AI Assistant page with context
+  const handleOpenAIAssistant = () => {
+    navigate("/ai-assistant", {
+      state: {
+        ideaContext: buildIdeaContext(),
+        ideaId: idea._id,
+        ideaTitle: idea.title,
+        userType: user?.userType,
+      },
+    });
+  };
 
   // Fetch idea details
   const { data: ideaData, isLoading } = useQuery(
@@ -287,6 +322,12 @@ const IdeaDetailPage = () => {
                   <Button variant="outline">
                     <Share2 className="w-4 h-4 mr-2" />
                     Share
+                  </Button>
+
+                  {/* Ask AI button for both investors and innovators */}
+                  <Button variant="outline" onClick={handleOpenAIAssistant}>
+                    <Bot className="w-4 h-4 mr-2" />
+                    Ask AI
                   </Button>
 
                   {user?.userType === "investor" &&

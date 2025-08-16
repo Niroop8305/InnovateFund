@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Bot,
@@ -18,9 +19,11 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const AIAssistantPage = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [context, setContext] = useState("general");
+  const [ideaContext, setIdeaContext] = useState(null);
   const messagesEndRef = useRef(null);
 
   const contexts = [
@@ -58,20 +61,33 @@ const AIAssistantPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initial welcome message
+  // Initial welcome message or idea context
   useEffect(() => {
-    const welcomeMessage = {
-      id: 1,
-      content:
-        user?.userType === "investor"
-          ? `Hello ${user.name}! I'm your AI investment assistant. I can help you evaluate opportunities, understand market trends, and make informed investment decisions. What would you like to know?`
-          : `Hi ${user.name}! I'm your AI innovation assistant. I can help you refine your ideas, understand market opportunities, and connect with the right investors. How can I assist you today?`,
-      sender: "ai",
-      timestamp: new Date(),
-      isWelcome: true,
-    };
-    setMessages([welcomeMessage]);
-  }, [user]);
+    if (location.state && location.state.ideaContext) {
+      setIdeaContext(location.state.ideaContext);
+      setMessages([
+        {
+          id: 1,
+          content: `You are now chatting about the following idea:\n\n${location.state.ideaContext}`,
+          sender: "ai",
+          timestamp: new Date(),
+          isWelcome: true,
+        },
+      ]);
+    } else {
+      const welcomeMessage = {
+        id: 1,
+        content:
+          user?.userType === "investor"
+            ? `Hello ${user.name}! I'm your AI investment assistant. I can help you evaluate opportunities, understand market trends, and make informed investment decisions. What would you like to know?`
+            : `Hi ${user.name}! I'm your AI innovation assistant. I can help you refine your ideas, understand market opportunities, and connect with the right investors. How can I assist you today?`,
+        sender: "ai",
+        timestamp: new Date(),
+        isWelcome: true,
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [user, location.state]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -88,12 +104,21 @@ const AIAssistantPage = () => {
     setMessages((prev) => [...prev, userMessage]);
 
     // Use latest messages state for AI (including the new user message)
-    const messagesForAI = [...messages, userMessage]
-      .filter((msg) => msg.sender === "user" || msg.sender === "ai")
-      .map((msg) => ({
-        role: msg.sender === "user" ? "user" : "assistant",
-        content: msg.content,
-      }));
+    const messagesForAI = [];
+    if (ideaContext) {
+      messagesForAI.push({
+        role: "system",
+        content: `Here is the idea context:\n${ideaContext}`,
+      });
+    }
+    messagesForAI.push(
+      ...[...messages, userMessage]
+        .filter((msg) => msg.sender === "user" || msg.sender === "ai")
+        .map((msg) => ({
+          role: msg.sender === "user" ? "user" : "assistant",
+          content: msg.content,
+        }))
+    );
     chatMutation.mutate({
       messages: messagesForAI,
       context,
@@ -207,7 +232,7 @@ const AIAssistantPage = () => {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-44">
         <div className="max-w-4xl mx-auto p-4">
           <div className="space-y-6">
             {messages.map((message) => (
@@ -257,7 +282,6 @@ const AIAssistantPage = () => {
                       </div>
                     )}
                   </div>
-
                   {/* Message Content */}
                   <div
                     className={`flex flex-col ${
@@ -269,26 +293,24 @@ const AIAssistantPage = () => {
                         message.sender === "user"
                           ? "bg-primary-600 text-white"
                           : message.isError
-                          ? "bg-red-50 text-red-800 border border-red-200"
+                          ? "bg-red-900/80 text-red-200 border border-red-700"
                           : message.isWelcome || message.isContextChange
-                          ? "bg-gradient-to-r from-purple-50 to-pink-50 text-gray-800 border border-purple-200"
-                          : "bg-white text-gray-800 border border-gray-200 shadow-sm"
+                          ? "bg-gradient-to-r from-purple-900/80 to-pink-900/80 text-purple-100 border border-purple-700"
+                          : "bg-gray-800 text-gray-100 border border-gray-700 shadow-sm"
                       }`}
                     >
                       {message.isWelcome && (
                         <div className="flex items-center mb-2">
-                          <Sparkles className="w-4 h-4 mr-2 text-purple-600" />
-                          <span className="text-sm font-medium text-purple-600">
+                          <Sparkles className="w-4 h-4 mr-2 text-purple-300" />
+                          <span className="text-sm font-medium text-purple-200">
                             Welcome!
                           </span>
                         </div>
                       )}
-
                       <p className="text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
                       </p>
                     </div>
-
                     <span
                       className={`text-xs text-gray-500 mt-1 ${
                         message.sender === "user" ? "mr-2" : "ml-2"
@@ -328,9 +350,9 @@ const AIAssistantPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-8"
+              className="mt-8 sticky bottom-32 z-10"
             >
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
+              <h3 className="text-sm font-medium text-gray-200 mb-3">
                 Suggested questions:
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -338,9 +360,9 @@ const AIAssistantPage = () => {
                   <button
                     key={index}
                     onClick={() => setInputMessage(question)}
-                    className="text-left p-3 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                    className="text-left p-3 bg-gray-800 border border-gray-700 rounded-lg hover:border-primary-400 hover:bg-primary-900/30 transition-colors text-gray-100"
                   >
-                    <p className="text-sm text-gray-700">{question}</p>
+                    <p className="text-sm">{question}</p>
                   </button>
                 ))}
               </div>
@@ -349,12 +371,26 @@ const AIAssistantPage = () => {
         </div>
       </div>
 
-      {/* Input */}
-      <div className="bg-white border-t border-gray-200 p-4">
-        <div className="max-w-4xl mx-auto">
-          <form
+      {/* Input with animated border, sticky at bottom */}
+      <div className="fixed bottom-0 left-0 w-full bg-gradient-to-t from-gray-950/95 to-transparent z-20">
+        <div className="max-w-4xl mx-auto px-4 pb-4">
+          <motion.form
             onSubmit={handleSendMessage}
-            className="flex items-center space-x-3"
+            className="flex items-center space-x-3 relative"
+            initial={{ boxShadow: "0 0 0 0 #a78bfa" }}
+            animate={{
+              boxShadow: [
+                "0 0 0 0 #a78bfa",
+                "0 0 12px 2px #a78bfa",
+                "0 0 0 0 #a78bfa",
+              ],
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{
+              borderRadius: "1rem",
+              background: "rgba(24,24,27,0.95)",
+              border: "1.5px solid #7c3aed",
+            }}
           >
             <div className="flex-1">
               <Input
@@ -363,10 +399,9 @@ const AIAssistantPage = () => {
                 }...`}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                className="border-0 bg-gray-100 focus:bg-white"
+                className="border-0 bg-gray-900 text-gray-100 focus:bg-gray-800"
               />
             </div>
-
             <Button
               type="submit"
               disabled={!inputMessage.trim() || chatMutation.isLoading}
@@ -374,10 +409,9 @@ const AIAssistantPage = () => {
             >
               <Send className="w-4 h-4" />
             </Button>
-          </form>
-
+          </motion.form>
           <div className="flex items-center justify-center mt-2">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-400">
               AI responses are generated and may not always be accurate. Use as
               guidance only.
             </p>
