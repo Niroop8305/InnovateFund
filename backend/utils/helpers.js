@@ -1,6 +1,6 @@
-import { bucket } from "../config/firebase.js";
-import path from "path";
-import axios from "axios"; // Add axios import
+import { bucket } from '../config/firebase.js';
+import path from 'path';
+import axios from 'axios'; // Add axios import
 
 export const uploadFileToFirebase = async (file, folderPath) => {
   if (!bucket) {
