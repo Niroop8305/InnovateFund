@@ -36,8 +36,15 @@ export const SocketProvider = ({ children }) => {
     }
     hasConnectedRef.current = true;
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const socketInstance = io(API_URL, {
+    const RAW_API_URL = import.meta.env.VITE_API_URL;
+    const SOCKET_URL =
+      import.meta.env.VITE_SOCKET_URL ||
+      (RAW_API_URL
+        ? RAW_API_URL.replace(/\/?api\/?$/, "")
+        : typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:5000");
+    const socketInstance = io(SOCKET_URL, {
       auth: { token },
       transports: ["websocket"], // force websocket to avoid long-poll race issues
       reconnectionAttempts: 5,

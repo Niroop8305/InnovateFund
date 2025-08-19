@@ -18,8 +18,9 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { api } from "../services/api";
-import { Bot, X } from "lucide-react";
+// Removed Bot and X icons import; floating button already includes its own icon
 import Button from "../components/ui/Button";
+import AIFloatingButton from "../components/ui/AIFloatingButton";
 import Input from "../components/ui/Input";
 import LoadingSpinner from "../components/ui/LoadingSpinner";
 import Modal from "../components/ui/Modal";
@@ -215,7 +216,7 @@ const IdeaDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+  <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6">
@@ -324,11 +325,7 @@ const IdeaDetailPage = () => {
                     Share
                   </Button>
 
-                  {/* Ask AI button for both investors and innovators */}
-                  <Button variant="outline" onClick={handleOpenAIAssistant}>
-                    <Bot className="w-4 h-4 mr-2" />
-                    Ask AI
-                  </Button>
+                  {/* Ask AI moved to floating action button for consistency */}
 
                   {user?.userType === "investor" &&
                     idea.creator &&
@@ -719,6 +716,8 @@ const IdeaDetailPage = () => {
           </form>
         </Modal>
       </div>
+  {/* Floating Ask AI Button */}
+  <AIFloatingButton onClick={handleOpenAIAssistant} />
     </div>
   );
 };

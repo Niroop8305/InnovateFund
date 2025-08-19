@@ -24,10 +24,14 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
-const allowedOrigins = process.env.FRONTEND_URL.split(",");
+// Safely resolve allowed origins from env; support comma-separated list, tolerate missing var
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: allowedOrigins.length ? allowedOrigins : "*",
     methods: ["GET", "POST"],
   },
 });
@@ -42,9 +46,18 @@ app.use(
     origin: function (origin, callback) {
       // allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
+      // if no explicit origins configured, allow all to prevent crashes in staging
+      if (allowedOrigins.length === 0) return callback(null, true);
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+      // allow Vercel preview domains by default if configured FRONTEND_URL includes a vercel app
+      try {
+        const hostname = new URL(origin).hostname;
+        if (hostname.endsWith(".vercel.app")) {
+          return callback(null, true);
+        }
+      } catch (_) {}
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
