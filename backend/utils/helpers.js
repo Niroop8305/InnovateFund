@@ -1,5 +1,6 @@
 import { bucket } from '../config/firebase.js';
 import path from 'path';
+import axios from 'axios'; // Add axios import
 
 export const uploadFileToFirebase = async (file, folderPath) => {
   if (!bucket) {
@@ -26,59 +27,45 @@ export const uploadFileToFirebase = async (file, folderPath) => {
 };
 
 export const generateImpactScore = async (ideaData) => {
-  // Dummy AI impact score generation
-  // In real implementation, this would call an AI service
-  
+  // Use OpenRouter AI to generate impact score
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+  const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
+
   const { title, description, category, stage } = ideaData;
-  
-  // Base score calculation
-  let score = Math.floor(Math.random() * 40) + 30; // 30-70 base
+  const ideaText = `Title: ${title}\nDescription: ${description}\nCategory: ${category}\nStage: ${stage}`;
 
-  // Category impact multipliers
-  const categoryScores = {
-    'healthcare': 20,
-    'environment': 18,
-    'education': 15,
-    'social': 15,
-    'technology': 12,
-    'finance': 10,
-    'consumer': 8,
-    'enterprise': 8
-  };
-
-  score += categoryScores[category] || 8;
-
-  // Stage multipliers
-  const stageMultipliers = {
-    'idea': 0.7,
-    'prototype': 0.9,
-    'mvp': 1.0,
-    'beta': 1.1,
-    'launched': 1.2
-  };
-
-  score = Math.floor(score * (stageMultipliers[stage] || 1.0));
-
-  // Keywords that boost impact score
-  const impactKeywords = [
-    'sustainable', 'accessible', 'affordable', 'scalable', 
-    'innovative', 'efficient', 'green', 'social impact',
-    'community', 'equality', 'diversity', 'inclusion'
+  const messages = [
+    {
+      role: "user",
+      content: `Rate the impact of this idea on a scale of 1 to 100. Only return the number. Idea: ${ideaText}`,
+    },
   ];
 
-  const text = `${title} ${description}`.toLowerCase();
-  let keywordBonus = 0;
-  
-  impactKeywords.forEach(keyword => {
-    if (text.includes(keyword)) {
-      keywordBonus += 3;
-    }
-  });
+  try {
+    const response = await axios.post(
+      OPENROUTER_API_URL,
+      {
+        model: "nousresearch/deephermes-3-llama-3-8b-preview:free",
+        messages,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  score += Math.min(keywordBonus, 15); // Cap keyword bonus at 15 points
-
-  // Ensure score is within 0-100 range
-  return Math.min(100, Math.max(0, score));
+    // Extract the score from the AI response
+    const aiContent = response.data.choices?.[0]?.message?.content || "";
+    // Parse the score as an integer (ensure it's between 0-100)
+    const score = Math.min(100, Math.max(0, parseInt(aiContent, 10) || 0));
+    return score;
+  } catch (error) {
+    console.error("AI impact score error:", error?.response?.data || error);
+    // Fallback to a default score if AI fails
+    return 50;
+  }
 };
 
 export const sanitizeFileName = (fileName) => {
