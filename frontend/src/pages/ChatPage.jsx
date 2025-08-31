@@ -105,8 +105,22 @@ const ChatPage = () => {
 
     const handleNewMessage = ({ chatId, message: newMessage }) => {
       if (selectedChat?._id === chatId) {
-        queryClient.invalidateQueries(['messages', chatId])
+        // Optimistically append without full refetch to remove latency
+        queryClient.setQueryData(['messages', chatId], (old) => {
+          if (!old || !old.data) return old; // structure: { data: { messages: [...] } }
+          const exists = old.data.messages.some(m => m._id === newMessage._id)
+          if (exists) return old
+            // Clone shallow
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              messages: [...old.data.messages, newMessage]
+            }
+          }
+        })
       }
+      // Refresh chat list metadata (last message preview)
       queryClient.invalidateQueries('chats')
     }
 

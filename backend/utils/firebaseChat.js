@@ -24,7 +24,8 @@ export async function addMessageToFirestore(chatId, data) {
   }
   const { senderId, content, messageType = 'text' } = data;
   const FieldValue = firebaseAdmin.firestore.FieldValue;
-  const createdAt = FieldValue.serverTimestamp();
+  // Use immediate server-side timestamp (ms) to avoid latency of serverTimestamp resolution for ordering
+  const createdAt = Date.now();
   const messageRef = db
     .collection(CHATS_COLLECTION)
     .doc(chatId)
@@ -36,7 +37,7 @@ export async function addMessageToFirestore(chatId, data) {
     senderId,
     content,
     messageType,
-    createdAt,
+    createdAt, // stored as number (ms)
     readBy: [],
     edited: false,
     editedAt: null,
@@ -53,7 +54,7 @@ export async function addMessageToFirestore(chatId, data) {
     senderId,
     content,
     messageType,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(createdAt).toISOString(),
     readBy: [initialRead],
     edited: false,
     editedAt: null,
@@ -82,16 +83,26 @@ export async function getMessagesFromFirestore(chatId, limit = 50) {
   const messages = [];
   snapshot.forEach((doc) => {
     const data = doc.data();
+    let createdAtIso;
+    if (data.createdAt instanceof Date) {
+      createdAtIso = data.createdAt.toISOString();
+    } else if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+      createdAtIso = data.createdAt.toDate().toISOString();
+    } else if (typeof data.createdAt === 'number') {
+      createdAtIso = new Date(data.createdAt).toISOString();
+    } else {
+      createdAtIso = new Date().toISOString();
+    }
     messages.push({
       _id: doc.id,
       chat: chatId,
       senderId: data.senderId,
       content: data.content,
       messageType: data.messageType || 'text',
-      createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+      createdAt: createdAtIso,
       readBy: data.readBy || [],
       edited: !!data.edited,
-      editedAt: data.editedAt ? data.editedAt.toDate().toISOString() : null,
+      editedAt: data.editedAt ? (typeof data.editedAt.toDate === 'function' ? data.editedAt.toDate().toISOString() : data.editedAt) : null,
     });
   });
 

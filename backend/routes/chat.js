@@ -168,11 +168,10 @@ router.post('/:chatId/messages', validateRequest(schemas.sendMessage), async (re
     // Emit to other participants via Socket.IO
     const otherParticipants = chat.participants.filter(p => p.toString() !== req.user._id.toString());
     otherParticipants.forEach(participantId => {
-      io.to(`user_${participantId}`).emit('new_message', {
-        chatId,
-        message: apiMessage
-      });
+      io.to(`user_${participantId}`).emit('new_message', { chatId, message: apiMessage });
     });
+    // Also emit to chat room for participants currently viewing it
+    io.to(`chat_${chatId}`).emit('new_message', { chatId, message: apiMessage });
 
     res.status(201).json({ message: apiMessage });
   } catch (error) {
