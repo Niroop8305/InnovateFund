@@ -1,4 +1,4 @@
-import { Chat, Message } from '../models/Chat.js';
+import { Chat } from '../models/Chat.js';
 import jwt from 'jsonwebtoken';
 
 export const setupSocketHandlers = (io) => {
