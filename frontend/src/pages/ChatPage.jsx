@@ -55,7 +55,17 @@ const ChatPage = () => {
   )
 
   const chats = chatsData?.data?.chats || []
-  const messages = messagesData?.data?.messages || []
+  const messages = (messagesData?.data?.messages || []).map(m => {
+    // Normalize for Firestore messages where sender may be { _id, name } OR only senderId
+    if (m.sender && m.sender._id) return m;
+    if (m.senderId) {
+      return {
+        ...m,
+        sender: { _id: m.senderId, name: m.sender?.name || 'User', profilePicture: m.sender?.profilePicture || '' }
+      };
+    }
+    return m;
+  })
   const searchUsers = usersData?.data?.users || []
 
   // Send message mutation
@@ -95,8 +105,22 @@ const ChatPage = () => {
 
     const handleNewMessage = ({ chatId, message: newMessage }) => {
       if (selectedChat?._id === chatId) {
-        queryClient.invalidateQueries(['messages', chatId])
+        // Optimistically append without full refetch to remove latency
+        queryClient.setQueryData(['messages', chatId], (old) => {
+          if (!old || !old.data) return old; // structure: { data: { messages: [...] } }
+          const exists = old.data.messages.some(m => m._id === newMessage._id)
+          if (exists) return old
+            // Clone shallow
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              messages: [...old.data.messages, newMessage]
+            }
+          }
+        })
       }
+      // Refresh chat list metadata (last message preview)
       queryClient.invalidateQueries('chats')
     }
 
@@ -343,7 +367,7 @@ const ChatPage = () => {
               ) : messages.length > 0 ? (
                 <>
                   {messages.map((message, index) => {
-                    const isOwn = message.sender._id === user._id
+                    const isOwn = (message.sender?._id || message.senderId) === user._id
                     const showDate = index === 0 || 
                       formatDate(message.createdAt) !== formatDate(messages[index - 1].createdAt)
 
