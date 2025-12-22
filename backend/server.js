@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -22,16 +22,31 @@ import { setupSocketHandlers } from "./controllers/socketController.js";
 
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = [
+  "MONGODB_URI",
+  "JWT_SECRET",
+  "FIREBASE_SERVICE_ACCOUNT",
+  "FIREBASE_STORAGE_BUCKET",
+];
+
+const missingEnvVars = requiredEnvVars.filter(
+  (varName) => !process.env[varName]
+);
+if (missingEnvVars.length > 0) {
+  console.error(
+    "Missing required environment variables:",
+    missingEnvVars.join(", ")
+  );
+  console.error("Please check your .env file.");
+  process.exit(1);
+}
+
 const app = express();
 const server = createServer(app);
-// Safely resolve allowed origins from env; support comma-separated list, tolerate missing var
-const allowedOrigins = (process.env.FRONTEND_URL || "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins.length ? allowedOrigins : "*",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
@@ -43,23 +58,7 @@ connectDB();
 app.use(helmet());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-      // if no explicit origins configured, allow all to prevent crashes in staging
-      if (allowedOrigins.length === 0) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      // allow Vercel preview domains by default if configured FRONTEND_URL includes a vercel app
-      try {
-        const hostname = new URL(origin).hostname;
-        if (hostname.endsWith(".vercel.app")) {
-          return callback(null, true);
-        }
-      } catch (_) {}
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   })
 );
@@ -107,8 +106,9 @@ app.use("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+
 });
 
 export { io };

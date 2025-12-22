@@ -1,39 +1,64 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { useForm } from 'react-hook-form'
-import { Mail, Lock, Eye, EyeOff, Lightbulb } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
-import toast from 'react-hot-toast'
+﻿import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Lightbulb,
+  UserCircle,
+  Briefcase,
+  Copy,
+  CheckCircle,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
-  const [showPassword, setShowPassword] = useState(false)
-  const { login, loading } = useAuth()
-  const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
+  const { login, loading } = useAuth();
+  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError
-  } = useForm()
+    setError,
+    setValue,
+  } = useForm();
 
   const onSubmit = async (data) => {
     try {
-      const result = await login(data.email, data.password)
-      
+      const result = await login(data.email, data.password);
+
       if (result.success) {
-        navigate('/dashboard')
+        navigate("/dashboard");
       } else {
-        setError('root', { message: result.error })
+        setError("root", { message: result.error });
       }
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error('An unexpected error occurred')
+      console.error("Login error:", error);
+      toast.error("An unexpected error occurred");
     }
-  }
+  };
+
+  const copyToClipboard = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    toast.success("Copied to clipboard!");
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const fillTestCredentials = (email, password) => {
+    setValue("email", email);
+    setValue("password", password);
+    toast.success("Test credentials filled!");
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -47,7 +72,10 @@ const LoginPage = () => {
           >
             {/* Header */}
             <div className="text-center mb-8">
-              <Link to="/" className="flex items-center justify-center space-x-2 mb-6">
+              <Link
+                to="/"
+                className="flex items-center justify-center space-x-2 mb-6"
+              >
                 <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
                   <Lightbulb className="w-6 h-6 text-white" />
                 </div>
@@ -55,14 +83,83 @@ const LoginPage = () => {
                   InnovateFund
                 </span>
               </Link>
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Welcome back
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Sign in to your account to continue your journey
               </p>
             </div>
+
+            {/* Test Credentials Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Demo Accounts Available
+                </h3>
+              </div>
+
+              <div className="space-y-2">
+                {/* Innovator Account */}
+                <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 flex-1">
+                    <UserCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
+                        Innovator
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        innovator@test.com / Test123!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      fillTestCredentials("innovator@test.com", "Test123!")
+                    }
+                    className="px-3 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                  >
+                    Use
+                  </button>
+                </div>
+
+                {/* Investor Account */}
+                <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
+                        Investor
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        investor@test.com / Test123!
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      fillTestCredentials("investor@test.com", "Test123!")
+                    }
+                    className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
+                  >
+                    Use
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                Click "Use" to auto-fill credentials and explore the platform
+              </p>
+            </motion.div>
 
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -78,28 +175,28 @@ const LoginPage = () => {
                 icon={<Mail className="w-4 h-4" />}
                 placeholder="Enter your email"
                 error={errors.email?.message}
-                {...register('email', {
-                  required: 'Email is required',
+                {...register("email", {
+                  required: "Email is required",
                   pattern: {
                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: 'Invalid email address'
-                  }
+                    message: "Invalid email address",
+                  },
                 })}
               />
 
               <Input
                 label="Password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 icon={<Lock className="w-4 h-4" />}
                 placeholder="Enter your password"
                 error={errors.password?.message}
                 iconPosition="right"
-                {...register('password', {
-                  required: 'Password is required',
+                {...register("password", {
+                  required: "Password is required",
                   minLength: {
                     value: 6,
-                    message: 'Password must be at least 6 characters'
-                  }
+                    message: "Password must be at least 6 characters",
+                  },
                 })}
               />
 
@@ -110,7 +207,10 @@ const LoginPage = () => {
                     type="checkbox"
                     className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  <label
+                    htmlFor="remember-me"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
                     Remember me
                   </label>
                 </div>
@@ -162,7 +262,7 @@ const LoginPage = () => {
                   to="/register"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Create your account →
+                  Create your account ΓåÆ
                 </Link>
               </div>
             </div>
@@ -172,17 +272,18 @@ const LoginPage = () => {
 
       {/* Right side - Hero Image */}
       <div className="hidden lg:block relative w-0 flex-1">
-        <div 
+        <div
           className="absolute inset-0 h-full w-full object-cover bg-gradient-to-br from-primary-600 to-secondary-600"
           style={{
-            backgroundImage: 'url("https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800")',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
+            backgroundImage:
+              'url("https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800")',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-primary-600/80 to-secondary-600/80" />
         </div>
-        
+
         <div className="absolute inset-0 flex items-center justify-center text-white p-12">
           <div className="max-w-md text-center">
             <motion.div
@@ -194,15 +295,15 @@ const LoginPage = () => {
                 Innovation Starts Here
               </h2>
               <p className="text-lg opacity-90 leading-relaxed">
-                Join thousands of innovators and investors building the future together. 
-                Your next breakthrough is just one connection away.
+                Join thousands of innovators and investors building the future
+                together. Your next breakthrough is just one connection away.
               </p>
             </motion.div>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LoginPage
+export default LoginPage;

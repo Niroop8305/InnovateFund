@@ -1,4 +1,4 @@
-// ...existing code...
+﻿// ...existing code...
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
@@ -60,7 +60,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       {user && <Navbar />}
 
-      <main className={user ? "pt-16" : ""}>
+      <main>
         <Suspense
           fallback={
             <div className="min-h-screen flex items-center justify-center">
