@@ -1,59 +1,71 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { 
-  TrendingUp, 
-  Users, 
-  Star, 
-  Building, 
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  TrendingUp,
+  Users,
+  Star,
+  Building,
   MapPin,
   DollarSign,
   Award,
   Filter,
-  Search
-} from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import { useQuery } from 'react-query'
-import { api } from '../services/api'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
-import LoadingSpinner from '../components/ui/LoadingSpinner'
+  Search,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useQuery } from "react-query";
+import { api } from "../services/api";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const InvestorsPage = () => {
-  const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('leaderboard')
-  const [selectedSector, setSelectedSector] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("leaderboard");
+  const [selectedSector, setSelectedSector] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const sectors = [
-    'technology', 'healthcare', 'finance', 'education', 
-    'environment', 'social', 'consumer', 'enterprise'
-  ]
+    "technology",
+    "healthcare",
+    "finance",
+    "education",
+    "environment",
+    "social",
+    "consumer",
+    "enterprise",
+  ];
 
   // Fetch investor leaderboard
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery(
-    'investorLeaderboard',
+    "investorLeaderboard",
     () => api.investors.getLeaderboard({ page: 1, limit: 50 }),
-    { enabled: activeTab === 'leaderboard' }
-  )
+    { enabled: activeTab === "leaderboard" }
+  );
 
   // Fetch sector-specific ideas for investor rooms
   const { data: sectorData, isLoading: sectorLoading } = useQuery(
-    ['sectorRoom', selectedSector],
+    ["sectorRoom", selectedSector],
     () => api.investors.getSectorRoom(selectedSector, { page: 1, limit: 12 }),
-    { enabled: activeTab === 'rooms' && selectedSector && user?.userType === 'investor' }
-  )
+    {
+      enabled:
+        activeTab === "rooms" &&
+        selectedSector &&
+        user?.userType === "investor",
+    }
+  );
 
-  const investors = leaderboardData?.data?.investors || []
-  const sectorIdeas = sectorData?.data?.ideas || []
+  const investors = leaderboardData?.data?.investors || [];
+  const sectorIdeas = sectorData?.data?.ideas || [];
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const InvestorCard = ({ investor, rank }) => (
     <motion.div
@@ -65,20 +77,31 @@ const InvestorsPage = () => {
         <div className="flex items-center">
           <div className="relative">
             <img
-              src={investor.profilePicture || `https://ui-avatars.com/api/?name=${investor.name}&background=667eea&color=fff`}
+              src={
+                investor.profilePicture ||
+                `https://ui-avatars.com/api/?name=${investor.name}&background=667eea&color=fff`
+              }
               alt={investor.name}
               className="w-16 h-16 rounded-full object-cover"
             />
             {rank <= 3 && (
-              <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                rank === 1 ? 'bg-yellow-500' : rank === 2 ? 'bg-gray-400' : 'bg-orange-500'
-              }`}>
+              <div
+                className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                  rank === 1
+                    ? "bg-yellow-500"
+                    : rank === 2
+                    ? "bg-gray-400"
+                    : "bg-orange-500"
+                }`}
+              >
                 {rank}
               </div>
             )}
           </div>
           <div className="ml-4">
-            <h3 className="text-lg font-semibold text-gray-900">{investor.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {investor.name}
+            </h3>
             {investor.company && (
               <p className="text-sm text-gray-600 flex items-center">
                 <Building className="w-4 h-4 mr-1" />
@@ -93,7 +116,7 @@ const InvestorsPage = () => {
             )}
           </div>
         </div>
-        
+
         <div className="text-right">
           <div className="flex items-center text-yellow-500 mb-1">
             <Star className="w-4 h-4 mr-1 fill-current" />
@@ -120,7 +143,9 @@ const InvestorsPage = () => {
 
       {investor.sectorsOfInterest && investor.sectorsOfInterest.length > 0 && (
         <div className="mb-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Sectors of Interest:</p>
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            Sectors of Interest:
+          </p>
           <div className="flex flex-wrap gap-1">
             {investor.sectorsOfInterest.slice(0, 3).map((sector, index) => (
               <span
@@ -139,11 +164,13 @@ const InvestorsPage = () => {
         </div>
       )}
 
-      <Button variant="outline" className="w-full">
-        View Profile
-      </Button>
+      <Link to={`/profile/${investor._id}`}>
+        <Button variant="outline" className="w-full">
+          View Profile
+        </Button>
+      </Link>
     </motion.div>
-  )
+  );
 
   const SectorIdeaCard = ({ idea }) => (
     <motion.div
@@ -169,7 +196,10 @@ const InvestorsPage = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <img
-            src={idea.creator?.profilePicture || `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`}
+            src={
+              idea.creator?.profilePicture ||
+              `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`
+            }
             alt={idea.creator?.name}
             className="w-8 h-8 rounded-full object-cover mr-2"
           />
@@ -191,21 +221,24 @@ const InvestorsPage = () => {
           </span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
+          <div
             className="bg-primary-600 h-2 rounded-full"
-            style={{ width: `${Math.min(100, (idea.currentFunding / idea.fundingGoal) * 100)}%` }}
+            style={{
+              width: `${Math.min(
+                100,
+                (idea.currentFunding / idea.fundingGoal) * 100
+              )}%`,
+            }}
           />
         </div>
       </div>
 
-      <Button className="w-full">
-        View & Invest
-      </Button>
+      <Button className="w-full">View & Invest</Button>
     </motion.div>
-  )
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -220,9 +253,9 @@ const InvestorsPage = () => {
             Investor Hub
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            {user?.userType === 'investor' 
-              ? 'Discover promising ideas in your sectors of interest and connect with fellow investors.'
-              : 'Meet our top investors and see who\'s actively funding innovative ideas.'}
+            {user?.userType === "investor"
+              ? "Discover promising ideas in your sectors of interest and connect with fellow investors."
+              : "Meet our top investors and see who's actively funding innovative ideas."}
           </p>
         </div>
 
@@ -230,23 +263,23 @@ const InvestorsPage = () => {
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
             <button
-              onClick={() => setActiveTab('leaderboard')}
+              onClick={() => setActiveTab("leaderboard")}
               className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'leaderboard'
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                activeTab === "leaderboard"
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <Award className="w-4 h-4 mr-2 inline" />
               Leaderboard
             </button>
-            {user?.userType === 'investor' && (
+            {user?.userType === "investor" && (
               <button
-                onClick={() => setActiveTab('rooms')}
+                onClick={() => setActiveTab("rooms")}
                 className={`px-6 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === 'rooms'
-                    ? 'bg-primary-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
+                  activeTab === "rooms"
+                    ? "bg-primary-600 text-white"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
                 <Users className="w-4 h-4 mr-2 inline" />
@@ -257,7 +290,7 @@ const InvestorsPage = () => {
         </div>
 
         {/* Leaderboard Tab */}
-        {activeTab === 'leaderboard' && (
+        {activeTab === "leaderboard" && (
           <div>
             {/* Search */}
             <div className="max-w-md mx-auto mb-8">
@@ -276,15 +309,20 @@ const InvestorsPage = () => {
             ) : investors.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {investors
-                  .filter(investor => 
-                    !searchQuery || 
-                    investor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    investor.company?.toLowerCase().includes(searchQuery.toLowerCase())
+                  .filter(
+                    (investor) =>
+                      !searchQuery ||
+                      investor.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
+                      investor.company
+                        ?.toLowerCase()
+                        .includes(searchQuery.toLowerCase())
                   )
                   .map((investor, index) => (
-                    <InvestorCard 
-                      key={investor._id} 
-                      investor={investor} 
+                    <InvestorCard
+                      key={investor._id}
+                      investor={investor}
                       rank={index + 1}
                     />
                   ))}
@@ -304,7 +342,7 @@ const InvestorsPage = () => {
         )}
 
         {/* Sector Rooms Tab */}
-        {activeTab === 'rooms' && user?.userType === 'investor' && (
+        {activeTab === "rooms" && user?.userType === "investor" && (
           <div>
             {/* Sector Selection */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
@@ -314,16 +352,16 @@ const InvestorsPage = () => {
                   Select Sector
                 </h3>
               </div>
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {sectors.map(sector => (
+                {sectors.map((sector) => (
                   <button
                     key={sector}
                     onClick={() => setSelectedSector(sector)}
                     className={`p-3 rounded-lg text-sm font-medium transition-colors ${
                       selectedSector === sector
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? "bg-primary-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
                     {sector.charAt(0).toUpperCase() + sector.slice(1)}
@@ -337,7 +375,9 @@ const InvestorsPage = () => {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    {selectedSector.charAt(0).toUpperCase() + selectedSector.slice(1)} Ideas
+                    {selectedSector.charAt(0).toUpperCase() +
+                      selectedSector.slice(1)}{" "}
+                    Ideas
                   </h2>
                   <div className="text-sm text-gray-500">
                     {sectorIdeas.length} ideas available
@@ -379,7 +419,8 @@ const InvestorsPage = () => {
                   Select a Sector
                 </h3>
                 <p className="text-gray-600">
-                  Choose a sector above to discover relevant investment opportunities.
+                  Choose a sector above to discover relevant investment
+                  opportunities.
                 </p>
               </div>
             )}
@@ -387,7 +428,7 @@ const InvestorsPage = () => {
         )}
 
         {/* Access Denied for Non-Investors */}
-        {activeTab === 'rooms' && user?.userType !== 'investor' && (
+        {activeTab === "rooms" && user?.userType !== "investor" && (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-gray-400" />
@@ -402,7 +443,7 @@ const InvestorsPage = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default InvestorsPage
+export default InvestorsPage;

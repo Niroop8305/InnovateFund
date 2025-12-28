@@ -62,6 +62,8 @@ export default {
         "slide-up": "slideUp 0.5s ease-out",
         "scale-in": "scaleIn 0.3s ease-out",
         "pulse-soft": "pulseSoft 2s infinite",
+        "pulse-slow": "pulseSlow 3s ease-in-out infinite",
+        "ping-slow": "pingSlow 2s cubic-bezier(0, 0, 0.2, 1) infinite",
         "glass-fade": "glassFade 0.7s cubic-bezier(.4,0,.2,1)",
       },
       keyframes: {
@@ -80,6 +82,15 @@ export default {
         pulseSoft: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
+        },
+        pulseSlow: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.85" },
+        },
+        pingSlow: {
+          "0%": { transform: "scale(1)", opacity: "0.8" },
+          "50%": { transform: "scale(1.15)", opacity: "0" },
+          "100%": { transform: "scale(1.15)", opacity: "0" },
         },
         glassFade: {
           "0%": { opacity: "0", filter: "blur(8px)" },

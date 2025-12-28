@@ -2,6 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import Idea from '../models/Idea.js';
 import { requireRole } from '../middleware/auth.js';
+import { validateRequest, schemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -75,9 +76,9 @@ router.get('/rooms/:sector', requireRole(['investor']), async (req, res) => {
 });
 
 // Make investment
-router.post('/invest/:ideaId', requireRole(['investor']), async (req, res) => {
+router.post('/invest/:ideaId', requireRole(['investor']), validateRequest(schemas.makeInvestment), async (req, res) => {
   try {
-    const { amount, terms } = req.body;
+    const { amount, message } = req.body;
     const { ideaId } = req.params;
 
     if (!amount || amount <= 0) {

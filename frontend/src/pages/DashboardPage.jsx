@@ -1,59 +1,59 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { 
-  TrendingUp, 
-  Users, 
-  Lightbulb, 
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  TrendingUp,
+  Users,
+  Lightbulb,
   DollarSign,
   Plus,
   ArrowRight,
   Star,
   Eye,
   Heart,
-  MessageSquare
-} from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import { api } from '../services/api'
-import Button from '../components/ui/Button'
-import LoadingSpinner from '../components/ui/LoadingSpinner'
-import { useQuery } from 'react-query'
+  MessageSquare,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../services/api";
+import Button from "../components/ui/Button";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
+import { useQuery } from "react-query";
 
 const DashboardPage = () => {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   // Fetch user stats
   const { data: stats, isLoading: statsLoading } = useQuery(
-    'userStats',
+    "userStats",
     api.users.getStats,
     { enabled: !!user }
-  )
+  );
 
   // Fetch recent ideas
   const { data: ideasData, isLoading: ideasLoading } = useQuery(
-    'recentIdeas',
-    () => api.ideas.getIdeas({ page: 1, limit: 6, sortBy: 'createdAt' }),
+    "recentIdeas",
+    () => api.ideas.getIdeas({ page: 1, limit: 6, sortBy: "createdAt" }),
     { enabled: !!user }
-  )
+  );
 
   // Fetch investor leaderboard
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery(
-    'investorLeaderboard',
+    "investorLeaderboard",
     () => api.investors.getLeaderboard({ page: 1, limit: 5 }),
     { enabled: !!user }
-  )
+  );
 
-  const recentIdeas = ideasData?.data?.ideas || []
-  const topInvestors = leaderboardData?.data?.investors || []
+  const recentIdeas = ideasData?.data?.ideas || [];
+  const topInvestors = leaderboardData?.data?.investors || [];
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const StatCard = ({ title, value, icon: Icon, color, change }) => (
     <motion.div
@@ -71,12 +71,14 @@ const DashboardPage = () => {
             </p>
           )}
         </div>
-        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${color}`}>
+        <div
+          className={`w-12 h-12 rounded-lg flex items-center justify-center ${color}`}
+        >
           <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
     </motion.div>
-  )
+  );
 
   const IdeaCard = ({ idea }) => (
     <motion.div
@@ -117,12 +119,18 @@ const DashboardPage = () => {
         </div>
         <div className="text-right">
           <div className="text-sm font-medium text-gray-900">
-            {formatCurrency(idea.currentFunding)} / {formatCurrency(idea.fundingGoal)}
+            {formatCurrency(idea.currentFunding)} /{" "}
+            {formatCurrency(idea.fundingGoal)}
           </div>
           <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
-            <div 
+            <div
               className="bg-primary-600 h-2 rounded-full"
-              style={{ width: `${Math.min(100, (idea.currentFunding / idea.fundingGoal) * 100)}%` }}
+              style={{
+                width: `${Math.min(
+                  100,
+                  (idea.currentFunding / idea.fundingGoal) * 100
+                )}%`,
+              }}
             />
           </div>
         </div>
@@ -131,7 +139,10 @@ const DashboardPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <img
-            src={idea.creator?.profilePicture || `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`}
+            src={
+              idea.creator?.profilePicture ||
+              `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`
+            }
             alt={idea.creator?.name}
             className="w-8 h-8 rounded-full object-cover mr-2"
           />
@@ -144,18 +155,18 @@ const DashboardPage = () => {
         </Link>
       </div>
     </motion.div>
-  )
+  );
 
   if (statsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -163,15 +174,15 @@ const DashboardPage = () => {
             Welcome back, {user?.name}!
           </h1>
           <p className="text-gray-600 mt-2">
-            {user?.userType === 'innovator' 
-              ? 'Ready to share your next big idea?' 
-              : 'Discover the next breakthrough innovation.'}
+            {user?.userType === "innovator"
+              ? "Ready to share your next big idea?"
+              : "Discover the next breakthrough innovation."}
           </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {user?.userType === 'innovator' ? (
+          {user?.userType === "innovator" ? (
             <>
               <StatCard
                 title="Total Ideas"
@@ -241,7 +252,9 @@ const DashboardPage = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
-                {user?.userType === 'innovator' ? 'Your Recent Ideas' : 'Latest Ideas'}
+                {user?.userType === "innovator"
+                  ? "Your Recent Ideas"
+                  : "Latest Ideas"}
               </h2>
               <Link to="/ideas">
                 <Button variant="outline" size="sm">
@@ -265,14 +278,16 @@ const DashboardPage = () => {
               <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
                 <Lightbulb className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {user?.userType === 'innovator' ? 'No ideas yet' : 'No ideas available'}
+                  {user?.userType === "innovator"
+                    ? "No ideas yet"
+                    : "No ideas available"}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {user?.userType === 'innovator' 
-                    ? 'Start by submitting your first innovative idea.'
-                    : 'Check back later for new innovative ideas.'}
+                  {user?.userType === "innovator"
+                    ? "Start by submitting your first innovative idea."
+                    : "Check back later for new innovative ideas."}
                 </p>
-                {user?.userType === 'innovator' && (
+                {user?.userType === "innovator" && (
                   <Link to="/ideas/create">
                     <Button>
                       <Plus className="w-4 h-4 mr-2" />
@@ -292,7 +307,7 @@ const DashboardPage = () => {
                 Quick Actions
               </h3>
               <div className="space-y-3">
-                {user?.userType === 'innovator' ? (
+                {user?.userType === "innovator" ? (
                   <>
                     <Link to="/ideas/create" className="block">
                       <Button className="w-full justify-start">
@@ -301,7 +316,10 @@ const DashboardPage = () => {
                       </Button>
                     </Link>
                     <Link to="/chat" className="block">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         <MessageSquare className="w-4 h-4 mr-2" />
                         Message Investors
                       </Button>
@@ -316,7 +334,10 @@ const DashboardPage = () => {
                       </Button>
                     </Link>
                     <Link to="/investors" className="block">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         <Users className="w-4 h-4 mr-2" />
                         Investor Rooms
                       </Button>
@@ -333,7 +354,7 @@ const DashboardPage = () => {
             </div>
 
             {/* Top Investors */}
-            {user?.userType === 'innovator' && (
+            {user?.userType === "innovator" && (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -358,7 +379,10 @@ const DashboardPage = () => {
                           {index + 1}
                         </div>
                         <img
-                          src={investor.profilePicture || `https://ui-avatars.com/api/?name=${investor.name}&background=667eea&color=fff`}
+                          src={
+                            investor.profilePicture ||
+                            `https://ui-avatars.com/api/?name=${investor.name}&background=667eea&color=fff`
+                          }
                           alt={investor.name}
                           className="w-8 h-8 rounded-full object-cover mr-3"
                         />
@@ -388,7 +412,7 @@ const DashboardPage = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default DashboardPage
+export default DashboardPage;

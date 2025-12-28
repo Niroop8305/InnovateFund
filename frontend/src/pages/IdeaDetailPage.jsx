@@ -40,33 +40,67 @@ const IdeaDetailPage = () => {
   // Helper: Build full context string for AI
   const buildIdeaContext = () => {
     if (!idea) return "";
-    let context = `Idea Title: ${idea.title}\n`;
-    context += `Description: ${idea.description}\n`;
-    context += `Category: ${idea.category}\n`;
-    context += `Stage: ${idea.stage}\n`;
-    context += `Funding Goal: ${idea.fundingGoal}\n`;
-    context += `Current Funding: ${idea.currentFunding}\n`;
-    context += `Impact Score: ${idea.impactScore}\n`;
+    let context = `📌 Idea Title: ${idea.title}\n\n`;
+    context += `📝 Description: ${idea.description}\n\n`;
+    context += `🏷️ Category: ${idea.category}\n`;
+    context += `🚀 Stage: ${idea.stage}\n`;
+    context += `💰 Funding Goal: $${idea.fundingGoal?.toLocaleString()}\n`;
+    context += `📊 Current Funding: $${idea.currentFunding?.toLocaleString()}\n`;
+    context += `⭐ Impact Score: ${idea.impactScore}\n`;
+    context += `👍 Likes: ${idea.likes?.length || 0}\n`;
+    context += `💬 Comments: ${idea.comments?.length || 0}\n`;
     if (idea.tags && idea.tags.length > 0)
-      context += `Tags: ${idea.tags.join(", ")}\n`;
+      context += `\n🔖 Tags: ${idea.tags.join(", ")}\n`;
     if (idea.attachments && idea.attachments.length > 0)
-      context += `Attachments: ${idea.attachments
+      context += `\n📎 Attachments: ${idea.attachments
         .map((a) => a.fileName)
         .join(", ")}\n`;
-    if (idea.creator) context += `Creator: ${idea.creator.name}\n`;
+    if (idea.creator) context += `\n👤 Creator: ${idea.creator.name}\n`;
+
+    // Add investment-related context
+    if (idea.investments && idea.investments.length > 0) {
+      context += `\n💼 Total Investors: ${idea.investments.length}\n`;
+    }
+
     return context;
   };
 
-  // Navigate to AI Assistant page with context
+  // Navigate to AI Assistant page with enhanced context
   const handleOpenAIAssistant = () => {
-    navigate("/ai-assistant", {
-      state: {
-        ideaContext: buildIdeaContext(),
-        ideaId: idea._id,
-        ideaTitle: idea.title,
-        userType: user?.userType,
-      },
-    });
+    if (!idea) {
+      toast.error("Please wait for idea details to load");
+      return;
+    }
+
+    const contextData = {
+      ideaContext: buildIdeaContext(),
+      ideaId: idea._id,
+      ideaTitle: idea.title,
+      ideaCategory: idea.category,
+      ideaStage: idea.stage,
+      userType: user?.userType,
+      isCreator: idea.creator?._id === user?._id,
+      currentFundingProgress: (
+        (idea.currentFunding / idea.fundingGoal) *
+        100
+      ).toFixed(1),
+      suggestedPrompts:
+        user?.userType === "investor"
+          ? [
+              "What are the investment risks for this idea?",
+              "Analyze the market potential for this concept",
+              "What questions should I ask the founder?",
+              "Compare this to similar successful startups",
+            ]
+          : [
+              "How can I improve my pitch?",
+              "What are potential challenges I should address?",
+              "Suggest ways to attract more investors",
+              "Help me validate my market assumptions",
+            ],
+    };
+
+    navigate("/ai-assistant", { state: contextData });
   };
 
   // Fetch idea details
@@ -216,7 +250,7 @@ const IdeaDetailPage = () => {
   }
 
   return (
-  <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <div className="mb-6">
@@ -716,8 +750,8 @@ const IdeaDetailPage = () => {
           </form>
         </Modal>
       </div>
-  {/* Floating Ask AI Button */}
-  <AIFloatingButton onClick={handleOpenAIAssistant} />
+      {/* Floating Ask AI Button */}
+      <AIFloatingButton onClick={handleOpenAIAssistant} />
     </div>
   );
 };

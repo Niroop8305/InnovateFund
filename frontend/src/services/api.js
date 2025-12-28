@@ -71,6 +71,11 @@ export const api = {
         headers: { "Content-Type": "multipart/form-data" },
       });
     },
+    changePassword: (data) =>
+      axiosInstance.post("/users/change-password", data),
+    updateNotifications: (enabled) =>
+      axiosInstance.put("/users/notifications", { enabled }),
+    deleteAccount: () => axiosInstance.delete("/users/delete"),
     searchUsers: (params) => axiosInstance.get("/users/search", { params }),
     getStats: () => axiosInstance.get("/users/stats"),
   },

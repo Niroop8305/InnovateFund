@@ -262,7 +262,7 @@ const LoginPage = () => {
                   to="/register"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Create your account ΓåÆ
+                  Create your account →
                 </Link>
               </div>
             </div>

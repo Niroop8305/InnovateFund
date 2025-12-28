@@ -1,82 +1,100 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Heart, 
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Heart,
   MessageSquare,
   TrendingUp,
   Clock,
-  Star
-} from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
-import { useQuery } from 'react-query'
-import { api } from '../services/api'
-import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
-import LoadingSpinner from '../components/ui/LoadingSpinner'
+  Star,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useQuery } from "react-query";
+import { api } from "../services/api";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 
 const IdeasPage = () => {
-  const { user } = useAuth()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const [selectedStage, setSelectedStage] = useState('')
-  const [sortBy, setSortBy] = useState('createdAt')
-  const [currentPage, setCurrentPage] = useState(1)
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedStage, setSelectedStage] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const categories = [
-    'technology', 'healthcare', 'finance', 'education', 
-    'environment', 'social', 'consumer', 'enterprise'
-  ]
+    "technology",
+    "healthcare",
+    "finance",
+    "education",
+    "environment",
+    "social",
+    "consumer",
+    "enterprise",
+  ];
 
-  const stages = ['idea', 'prototype', 'mvp', 'beta', 'launched']
+  const stages = ["idea", "prototype", "mvp", "beta", "launched"];
 
   const sortOptions = [
-    { value: 'createdAt', label: 'Latest' },
-    { value: 'likes', label: 'Most Liked' },
-    { value: 'funding', label: 'Most Funded' },
-    { value: 'impact', label: 'Highest Impact' }
-  ]
+    { value: "createdAt", label: "Latest" },
+    { value: "likes", label: "Most Liked" },
+    { value: "funding", label: "Most Funded" },
+    { value: "impact", label: "Highest Impact" },
+  ];
 
   // Fetch ideas with filters
-  const { data: ideasData, isLoading, refetch } = useQuery(
-    ['ideas', searchQuery, selectedCategory, selectedStage, sortBy, currentPage],
-    () => api.ideas.getIdeas({
-      page: currentPage,
-      limit: 12,
-      search: searchQuery || undefined,
-      category: selectedCategory || undefined,
-      stage: selectedStage || undefined,
-      sortBy
-    }),
+  const {
+    data: ideasData,
+    isLoading,
+    refetch,
+  } = useQuery(
+    [
+      "ideas",
+      searchQuery,
+      selectedCategory,
+      selectedStage,
+      sortBy,
+      currentPage,
+    ],
+    () =>
+      api.ideas.getIdeas({
+        page: currentPage,
+        limit: 12,
+        search: searchQuery || undefined,
+        category: selectedCategory || undefined,
+        stage: selectedStage || undefined,
+        sortBy,
+      }),
     { keepPreviousData: true }
-  )
+  );
 
-  const ideas = ideasData?.data?.ideas || []
-  const pagination = ideasData?.data?.pagination || {}
+  const ideas = ideasData?.data?.ideas || [];
+  const pagination = ideasData?.data?.pagination || {};
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const getStageColor = (stage) => {
     const colors = {
-      idea: 'bg-gray-100 text-gray-800',
-      prototype: 'bg-blue-100 text-blue-800',
-      mvp: 'bg-yellow-100 text-yellow-800',
-      beta: 'bg-orange-100 text-orange-800',
-      launched: 'bg-green-100 text-green-800'
-    }
-    return colors[stage] || 'bg-gray-100 text-gray-800'
-  }
+      idea: "bg-gray-100 text-gray-800",
+      prototype: "bg-blue-100 text-blue-800",
+      mvp: "bg-yellow-100 text-yellow-800",
+      beta: "bg-orange-100 text-orange-800",
+      launched: "bg-green-100 text-green-800",
+    };
+    return colors[stage] || "bg-gray-100 text-gray-800";
+  };
 
   const IdeaCard = ({ idea }) => (
     <motion.div
@@ -102,7 +120,7 @@ const IdeasPage = () => {
             </div>
           </div>
         )}
-        
+
         {/* Impact Score Badge */}
         <div className="absolute top-3 right-3">
           <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center">
@@ -113,7 +131,11 @@ const IdeasPage = () => {
 
         {/* Stage Badge */}
         <div className="absolute top-3 left-3">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(idea.stage)}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(
+              idea.stage
+            )}`}
+          >
             {idea.stage}
           </span>
         </div>
@@ -142,9 +164,14 @@ const IdeasPage = () => {
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-primary-600 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, (idea.currentFunding / idea.fundingGoal) * 100)}%` }}
+              style={{
+                width: `${Math.min(
+                  100,
+                  (idea.currentFunding / idea.fundingGoal) * 100
+                )}%`,
+              }}
             />
           </div>
           <div className="text-xs text-gray-500 mt-1">
@@ -178,29 +205,32 @@ const IdeasPage = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <img
-              src={idea.creator?.profilePicture || `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`}
+              src={
+                idea.creator?.profilePicture ||
+                `https://ui-avatars.com/api/?name=${idea.creator?.name}&background=667eea&color=fff`
+              }
               alt={idea.creator?.name}
               className="w-8 h-8 rounded-full object-cover mr-2"
             />
             <div>
-              <p className="text-sm font-medium text-gray-900">{idea.creator?.name}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {idea.creator?.name}
+              </p>
               {idea.creator?.company && (
                 <p className="text-xs text-gray-500">{idea.creator.company}</p>
               )}
             </div>
           </div>
           <Link to={`/ideas/${idea._id}`}>
-            <Button size="sm">
-              View Details
-            </Button>
+            <Button size="sm">View Details</Button>
           </Link>
         </div>
       </div>
     </motion.div>
-  )
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
@@ -212,8 +242,8 @@ const IdeasPage = () => {
               Discover groundbreaking ideas and invest in the future
             </p>
           </div>
-          
-          {user?.userType === 'innovator' && (
+
+          {user?.userType === "innovator" && (
             <div className="mt-4 sm:mt-0">
               <Link to="/ideas/create">
                 <Button>
@@ -246,7 +276,7 @@ const IdeasPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">All Categories</option>
-                {categories.map(category => (
+                {categories.map((category) => (
                   <option key={category} value={category}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </option>
@@ -262,7 +292,7 @@ const IdeasPage = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">All Stages</option>
-                {stages.map(stage => (
+                {stages.map((stage) => (
                   <option key={stage} value={stage}>
                     {stage.charAt(0).toUpperCase() + stage.slice(1)}
                   </option>
@@ -281,7 +311,7 @@ const IdeasPage = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="border-0 bg-transparent text-sm font-medium text-gray-900 focus:outline-none focus:ring-0"
               >
-                {sortOptions.map(option => (
+                {sortOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -319,24 +349,27 @@ const IdeasPage = () => {
                   >
                     Previous
                   </Button>
-                  
+
                   <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                      const page = i + 1
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
-                            currentPage === page
-                              ? 'bg-primary-600 text-white'
-                              : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      )
-                    })}
+                    {Array.from(
+                      { length: Math.min(5, pagination.totalPages) },
+                      (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                              currentPage === page
+                                ? "bg-primary-600 text-white"
+                                : "text-gray-600 hover:bg-gray-100"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      }
+                    )}
                   </div>
 
                   <Button
@@ -361,19 +394,22 @@ const IdeasPage = () => {
             <p className="text-gray-600 mb-4">
               Try adjusting your search criteria or filters
             </p>
-            <Button variant="outline" onClick={() => {
-              setSearchQuery('')
-              setSelectedCategory('')
-              setSelectedStage('')
-              refetch()
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory("");
+                setSelectedStage("");
+                refetch();
+              }}
+            >
               Clear Filters
             </Button>
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default IdeasPage
+export default IdeasPage;

@@ -36,7 +36,13 @@
     "tailwindcss": "^3.3.5",
     "vite": "^4.5.0"
   },
-  "keywords": ["investment", "innovation", "startup", "react", "frontend"],
+  "keywords": [
+    "investment",
+    "innovation",
+    "startup",
+    "react",
+    "frontend"
+  ],
   "author": "InnovateFund Team",
-  "license": "ISC"
+  "license": "MIT"
 }

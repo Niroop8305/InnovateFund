@@ -15,6 +15,9 @@ import {
   Eye,
   Heart,
   MessageSquare,
+  X,
+  Plus,
+  DollarSign,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
@@ -75,6 +78,7 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({});
   const [profilePicture, setProfilePicture] = useState(null);
+  const [expertiseInput, setExpertiseInput] = useState("");
 
   const isOwnProfile = !id || id === user?._id;
   const profileId = id || user?._id;
@@ -88,6 +92,7 @@ const ProfilePage = () => {
 
   const profile = profileResponse?.data?.user;
   const ideas = profileResponse?.data?.ideas || [];
+  const investments = profileResponse?.data?.investments || [];
 
   // Update profile mutation
   const updateProfileMutation = useMutation(
@@ -200,7 +205,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <motion.div
@@ -304,7 +309,7 @@ const ProfilePage = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-gray-200 dark:border-slate-800">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-200 dark:border-slate-800">
             {profile.userType === "innovator" ? (
               <>
                 <div className="text-center">
@@ -376,21 +381,6 @@ const ProfilePage = () => {
                   </div>
                   <div className="text-sm text-gray-600 dark:text-slate-400">
                     Reputation
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">
-                    {profile.investmentRange?.min != null &&
-                    profile.investmentRange?.max != null
-                      ? `${formatCurrency(
-                          Number(profile.investmentRange.min) || 0
-                        )}-${formatCurrency(
-                          Number(profile.investmentRange.max) || 0
-                        )}`
-                      : "N/A"}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-slate-400">
-                    Investment Range
                   </div>
                 </div>
               </>
@@ -598,6 +588,211 @@ const ProfilePage = () => {
                 </Modal>
               </motion.div>
             )}
+
+            {/* Investment Portfolio & Activity (for investors) */}
+            {profile.userType === "investor" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-6 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-primary-600" />
+                  Investment Profile
+                </h2>
+
+                <div className="space-y-6">
+                  {/* Investment Range */}
+                  <div className="p-5 bg-gradient-to-r from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 rounded-lg border border-primary-100 dark:border-primary-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">
+                          Investment Range
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                          {profile.investmentRange?.min != null &&
+                          profile.investmentRange?.max != null
+                            ? `${formatCurrency(
+                                Number(profile.investmentRange.min) || 0
+                              )} - ${formatCurrency(
+                                Number(profile.investmentRange.max) || 0
+                              )}`
+                            : "Not specified"}
+                        </p>
+                      </div>
+                      <DollarSign className="w-12 h-12 text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                    </div>
+                  </div>
+
+                  {/* Investment Stats Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-5 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800 text-center">
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">
+                        Total Investments
+                      </p>
+                      <p className="text-4xl font-bold text-green-600 dark:text-green-400">
+                        {profile.totalInvestments || 0}
+                      </p>
+                    </div>
+                    <div className="p-5 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800 text-center">
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">
+                        Successful
+                      </p>
+                      <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                        {profile.successfulInvestments || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Success Rate */}
+                  {profile.totalInvestments > 0 && (
+                    <div className="p-5 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border border-yellow-100 dark:border-yellow-800">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                          Success Rate
+                        </p>
+                        <span className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                          {(
+                            (profile.successfulInvestments /
+                              profile.totalInvestments) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${
+                              (profile.successfulInvestments /
+                                profile.totalInvestments) *
+                              100
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reputation Score */}
+                  <div className="p-5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">
+                          Reputation Score
+                        </p>
+                        <div className="flex items-center">
+                          <Star className="w-7 h-7 text-yellow-500 mr-2 fill-current" />
+                          <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">
+                            {profile.reputationScore || 0}
+                          </span>
+                          <span className="text-lg text-gray-500 dark:text-slate-400 ml-1">
+                            /100
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
+                          {profile.reputationScore >= 80
+                            ? "🏆 Top Investor"
+                            : profile.reputationScore >= 60
+                            ? "⭐ Active Investor"
+                            : profile.reputationScore >= 40
+                            ? "📈 Growing"
+                            : "🌱 New Investor"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Investment Portfolio (for investors) */}
+            {profile.userType === "investor" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center">
+                  <Lightbulb className="w-5 h-5 mr-2 text-primary-600" />
+                  Investment Portfolio ({investments.length})
+                </h2>
+                {investments.length > 0 ? (
+                  <div className="space-y-4">
+                    {investments.map((idea) => (
+                      <div
+                        key={idea._id}
+                        className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:border-primary-300 dark:hover:border-primary-500 transition-colors bg-white dark:bg-slate-800/60"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">
+                              {idea.title}
+                            </h3>
+                            <div className="flex items-center text-xs text-gray-500 dark:text-slate-400 space-x-3">
+                              <span className="flex items-center">
+                                <User className="w-3 h-3 mr-1" />
+                                {idea.creator?.name}
+                              </span>
+                              <span className="capitalize px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                                {idea.category}
+                              </span>
+                              <span className="capitalize px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-800 dark:text-primary-300">
+                                {idea.stage}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+                          <div className="flex items-center space-x-4">
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-slate-400">
+                                Your Investment
+                              </p>
+                              <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                                {formatCurrency(
+                                  Number(idea.investmentAmount) || 0
+                                )}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-slate-400">
+                                Current Funding
+                              </p>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-slate-200">
+                                {formatCurrency(
+                                  Number(idea.currentFunding) || 0
+                                )}{" "}
+                                /{" "}
+                                {formatCurrency(Number(idea.fundingGoal) || 0)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 dark:text-slate-400">
+                              {new Date(idea.investedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Lightbulb className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500 dark:text-slate-500">
+                      No investments yet
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
           {/* Sidebar */}
           <div className="space-y-6">
@@ -709,6 +904,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Website"
+                placeholder="https://example.com"
                 value={profileData.website || ""}
                 onChange={(e) =>
                   setProfileData((prev) => ({
@@ -719,6 +915,7 @@ const ProfilePage = () => {
               />
               <Input
                 label="LinkedIn Profile"
+                placeholder="https://linkedin.com/in/username"
                 value={profileData.linkedinProfile || ""}
                 onChange={(e) =>
                   setProfileData((prev) => ({
@@ -729,38 +926,177 @@ const ProfilePage = () => {
               />
             </div>
 
+            {/* Investment Range - Only for Investors */}
             {profile.userType === "investor" && (
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Min Investment ($)"
-                  type="number"
-                  value={profileData.investmentRange?.min || ""}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      investmentRange: {
-                        ...prev.investmentRange,
-                        min: parseInt(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                />
-                <Input
-                  label="Max Investment ($)"
-                  type="number"
-                  value={profileData.investmentRange?.max || ""}
-                  onChange={(e) =>
-                    setProfileData((prev) => ({
-                      ...prev,
-                      investmentRange: {
-                        ...prev.investmentRange,
-                        max: parseInt(e.target.value) || 0,
-                      },
-                    }))
-                  }
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Investment Range
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  Specify your typical investment range
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Minimum ($)"
+                    type="number"
+                    placeholder="10000"
+                    value={profileData.investmentRange?.min || ""}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        investmentRange: {
+                          ...prev.investmentRange,
+                          min: parseInt(e.target.value) || 0,
+                        },
+                      }))
+                    }
+                  />
+                  <Input
+                    label="Maximum ($)"
+                    type="number"
+                    placeholder="100000"
+                    value={profileData.investmentRange?.max || ""}
+                    onChange={(e) =>
+                      setProfileData((prev) => ({
+                        ...prev,
+                        investmentRange: {
+                          ...prev.investmentRange,
+                          max: parseInt(e.target.value) || 0,
+                        },
+                      }))
+                    }
+                  />
+                </div>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Expertise
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Add your skills and areas of expertise
+              </p>
+
+              {/* Expertise Tags Display */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(profileData.expertise || []).map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300 border border-primary-200 dark:border-primary-800 transition-all hover:bg-primary-200 dark:hover:bg-primary-900/60"
+                  >
+                    {skill}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileData((prev) => ({
+                          ...prev,
+                          expertise: prev.expertise.filter((_, i) => i !== idx),
+                        }));
+                      }}
+                      className="ml-1 hover:bg-primary-200 dark:hover:bg-primary-800 rounded-full p-0.5 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                {(!profileData.expertise ||
+                  profileData.expertise.length === 0) && (
+                  <span className="text-sm text-gray-400 dark:text-gray-500 italic">
+                    No expertise added yet
+                  </span>
+                )}
+              </div>
+
+              {/* Input for adding new expertise */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add a skill (e.g., AI/ML, blockchain)"
+                  value={expertiseInput}
+                  onChange={(e) => setExpertiseInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      const trimmed = expertiseInput.trim();
+                      if (
+                        trimmed &&
+                        !(profileData.expertise || []).includes(trimmed)
+                      ) {
+                        setProfileData((prev) => ({
+                          ...prev,
+                          expertise: [...(prev.expertise || []), trimmed],
+                        }));
+                        setExpertiseInput("");
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const trimmed = expertiseInput.trim();
+                    if (
+                      trimmed &&
+                      !(profileData.expertise || []).includes(trimmed)
+                    ) {
+                      setProfileData((prev) => ({
+                        ...prev,
+                        expertise: [...(prev.expertise || []), trimmed],
+                      }));
+                      setExpertiseInput("");
+                    }
+                  }}
+                  className="flex-shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Sectors of Interest
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Select sectors you're interested in
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "technology",
+                  "healthcare",
+                  "finance",
+                  "education",
+                  "environment",
+                  "social",
+                  "consumer",
+                  "enterprise",
+                ].map((sector) => (
+                  <button
+                    key={sector}
+                    type="button"
+                    onClick={() => {
+                      const currentSectors =
+                        profileData.sectorsOfInterest || [];
+                      const newSectors = currentSectors.includes(sector)
+                        ? currentSectors.filter((s) => s !== sector)
+                        : [...currentSectors, sector];
+                      setProfileData((prev) => ({
+                        ...prev,
+                        sectorsOfInterest: newSectors,
+                      }));
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      (profileData.sectorsOfInterest || []).includes(sector)
+                        ? "bg-secondary-500 text-white hover:bg-secondary-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                    }`}
+                  >
+                    {sector}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="flex justify-end space-x-3">
               <Button variant="outline" onClick={() => setIsEditing(false)}>

@@ -8,6 +8,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node mockData.js",
+    "init-users": "node -e \"import('./initTestUsers.js').then(m => m.initTestUsers())\"",
+    "prod": "NODE_ENV=production node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -36,5 +38,5 @@
     "api"
   ],
   "author": "InnovateFund Team",
-  "license": "ISC"
+  "license": "MIT"
 }

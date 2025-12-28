@@ -3,6 +3,7 @@ import multer from "multer";
 import User from "../models/User.js";
 import Idea from "../models/Idea.js";
 import { uploadFileToFirebase } from "../utils/helpers.js";
+import { validateRequest, schemas } from "../middleware/validation.js";
 
 const router = express.Router();
 const upload = multer({
@@ -87,7 +88,31 @@ router.get("/profile/:id?", async (req, res) => {
         .limit(10);
     }
 
-    res.json({ user, ideas });
+    // Get investor's investments if investor
+    let investments = [];
+    if (user.userType === "investor") {
+      investments = await Idea.find({ "investments.investor": userId })
+        .select(
+          "title category stage currentFunding fundingGoal status createdAt creator investments"
+        )
+        .populate("creator", "name profilePicture")
+        .sort({ "investments.investedAt": -1 })
+        .limit(20);
+      
+      // Filter and add investment details for this investor
+      investments = investments.map(idea => {
+        const investment = idea.investments.find(
+          inv => inv.investor.toString() === userId.toString()
+        );
+        return {
+          ...idea.toObject(),
+          investmentAmount: investment?.amount,
+          investedAt: investment?.investedAt,
+        };
+      });
+    }
+
+    res.json({ user, ideas, investments });
   } catch (error) {
     console.error("Get profile error:", error);
     res.status(500).json({ message: "Server error" });
@@ -95,7 +120,7 @@ router.get("/profile/:id?", async (req, res) => {
 });
 
 // Update user profile
-router.put("/profile", async (req, res) => {
+router.put("/profile", validateRequest(schemas.updateProfile), async (req, res) => {
   try {
     const {
       name,
@@ -107,20 +132,22 @@ router.put("/profile", async (req, res) => {
       expertise,
       sectorsOfInterest,
       investmentRange,
+      notificationsEnabled,
     } = req.body;
 
     const updateData = {};
 
-    if (name) updateData.name = name;
+    if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
     if (location !== undefined) updateData.location = location;
     if (company !== undefined) updateData.company = company;
     if (website !== undefined) updateData.website = website;
     if (linkedinProfile !== undefined)
       updateData.linkedinProfile = linkedinProfile;
-    if (expertise) updateData.expertise = expertise;
-    if (sectorsOfInterest) updateData.sectorsOfInterest = sectorsOfInterest;
-    if (investmentRange) updateData.investmentRange = investmentRange;
+    if (expertise !== undefined) updateData.expertise = expertise;
+    if (sectorsOfInterest !== undefined) updateData.sectorsOfInterest = sectorsOfInterest;
+    if (investmentRange !== undefined) updateData.investmentRange = investmentRange;
+    if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
 
     const user = await User.findByIdAndUpdate(req.user._id, updateData, {
       new: true,

@@ -54,15 +54,19 @@ export const SocketProvider = ({ children }) => {
     setSocket(socketInstance);
 
     socketInstance.on("connect", () => {
-      console.log("Connected to server");
+      if (import.meta.env.DEV) {
+        console.log("Connected to server");
+      }
     });
 
     socketInstance.on("disconnect", (reason) => {
-      console.log("Disconnected from server:", reason);
+      if (import.meta.env.DEV) {
+        console.log("Disconnected from server:", reason);
+      }
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.warn("Socket connect error:", err.message);
+      console.error("Socket connect error:", err.message);
     });
 
     // Notification handlers
@@ -80,7 +84,9 @@ export const SocketProvider = ({ children }) => {
 
     // Chat handlers
     socketInstance.on("new_message", ({ chatId, message }) => {
-      console.log("New message received:", { chatId, message });
+      if (import.meta.env.DEV) {
+        console.log("New message received:", { chatId, message });
+      }
     });
 
     // User status handlers
@@ -98,10 +104,14 @@ export const SocketProvider = ({ children }) => {
 
     // Typing indicators
     socketInstance.on("user_typing", ({ userId, chatId }) => {
-      console.log(`User ${userId} is typing in chat ${chatId}`);
+      if (import.meta.env.DEV) {
+        console.log(`User ${userId} is typing in chat ${chatId}`);
+      }
     });
     socketInstance.on("user_stop_typing", ({ userId, chatId }) => {
-      console.log(`User ${userId} stopped typing in chat ${chatId}`);
+      if (import.meta.env.DEV) {
+        console.log(`User ${userId} stopped typing in chat ${chatId}`);
+      }
     });
 
     socketInstance.on("error", (error) => {

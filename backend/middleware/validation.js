@@ -21,7 +21,14 @@ export const validateRequest = (schema) => {
 };
 
 export const schemas = {
-  register: Joi.object().unknown(true),
+  register: Joi.object({
+    name: Joi.string().min(2).max(100).trim().required(),
+    email: Joi.string().email().lowercase().trim().required(),
+    password: Joi.string().min(6).max(128).required(),
+    userType: Joi.string().valid("innovator", "investor").required(),
+    company: Joi.string().max(100).trim().optional().allow(""),
+    bio: Joi.string().max(500).trim().optional().allow(""),
+  }),
 
   login: Joi.object({
     email: Joi.string().email().required(),
@@ -57,5 +64,22 @@ export const schemas = {
   sendMessage: Joi.object({
     content: Joi.string().min(1).max(2000).required(),
     messageType: Joi.string().valid("text", "file", "image").default("text"),
+  }),
+
+  makeInvestment: Joi.object({
+    amount: Joi.number().min(100).max(10000000).required(),
+    message: Joi.string().max(500).trim().optional().allow(""),
+  }),
+
+  updateProfile: Joi.object({
+    name: Joi.string().min(2).max(100).trim().optional(),
+    bio: Joi.string().max(500).trim().optional().allow(""),
+    location: Joi.string().max(100).trim().optional().allow(""),
+    company: Joi.string().max(100).trim().optional().allow(""),
+    website: Joi.string().uri().optional().allow(""),
+    linkedinProfile: Joi.string().uri().optional().allow(""),
+    expertise: Joi.array().items(Joi.string().max(50)).max(20).optional(),
+    sectorsOfInterest: Joi.array().items(Joi.string()).max(10).optional(),
+    notificationsEnabled: Joi.boolean().optional(),
   }),
 };

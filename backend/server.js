@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 import connectDB from "./config/database.js";
 import "./config/firebase.js";
@@ -28,6 +29,8 @@ const requiredEnvVars = [
   "JWT_SECRET",
   "FIREBASE_SERVICE_ACCOUNT",
   "FIREBASE_STORAGE_BUCKET",
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_API_URL",
 ];
 
 const missingEnvVars = requiredEnvVars.filter(
@@ -65,10 +68,13 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: "Too many requests from this IP, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
 });
-app.use(limiter);
+app.use("/api", limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -108,7 +114,20 @@ app.use("*", (req, res) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+});
 
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+    mongoose.connection.close(false, () => {
+      console.log("MongoDB connection closed");
+      process.exit(0);
+    });
+  });
 });
 
 export { io };
+
