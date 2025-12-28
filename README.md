@@ -1,20 +1,20 @@
-﻿# InnovateFund ≡ƒÜÇ
+﻿# InnovateFund 💡
 
 > **Connecting Visionary Innovators with Forward-Thinking Investors**
 
 InnovateFund is a comprehensive crowdfunding and networking platform designed to bridge the gap between innovators with groundbreaking ideas and investors seeking high-impact opportunities. Built with modern web technologies, it provides a seamless, real-time experience for discovering, evaluating, and funding the next generation of innovative projects.
 
-## ≡ƒîƒ Why InnovateFund?
+## 🎯 Why InnovateFund?
 
 In today's fast-paced innovation landscape, great ideas often struggle to find the right funding, and investors miss opportunities buried in noise. InnovateFund solves this by:
 
-- **≡ƒÄ» Smart Matching**: AI-powered recommendations match investors with ideas aligned to their interests and investment criteria
-- **≡ƒÆ¼ Direct Communication**: Real-time chat enables immediate connections between innovators and potential backers
-- **≡ƒôè Transparent Tracking**: Milestone-based funding with clear progress indicators builds trust and accountability
-- **≡ƒñû AI Assistance**: Integrated AI assistant helps innovators refine pitches and develop compelling narratives
-- **≡ƒöÆ Secure & Verified**: JWT authentication, role-based access, and verified user profiles ensure platform integrity
+- **🧠 Smart Matching**: AI-powered recommendations match investors with ideas aligned to their interests and investment criteria
+- **💬 Direct Communication**: Real-time chat enables immediate connections between innovators and potential backers
+- **📊 Transparent Tracking**: Milestone-based funding with clear progress indicators builds trust and accountability
+- **🤖 AI Assistance**: Integrated AI assistant helps innovators refine pitches and develop compelling narratives
+- **🔒 Secure & Verified**: JWT authentication, role-based access, and verified user profiles ensure platform integrity
 
-## Γ£¿ Key Features
+## ✨ Key Features
 
 ### For Innovators
 
@@ -41,7 +41,7 @@ In today's fast-paced innovation landscape, great ideas often struggle to find t
 - **Profile Management**: Rich user profiles with Firebase-backed image storage
 - **Advanced Search**: Filter and discover ideas by multiple criteria
 
-## ≡ƒ¢á∩╕Å Technology Stack
+## 🛠️ Technology Stack
 
 ### Frontend Architecture
 
@@ -75,7 +75,7 @@ In today's fast-paced innovation landscape, great ideas often struggle to find t
 - **Input Validation** - Joi-based request validation
 - **Environment Variables** - Secure configuration management
 
-## ∩┐╜ Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -122,7 +122,7 @@ echo "VITE_API_URL=http://localhost:5000/api" > .env
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Create a new project (or use existing)
 3. Enable **Cloud Storage** in the Storage section
-4. Go to **Project Settings** ΓåÆ **Service Accounts**
+4. Go to **Project Settings** → **Service Accounts**
 5. Click **Generate New Private Key** and save the JSON file
 6. Copy the entire JSON content to your `.env` file as `FIREBASE_SERVICE_ACCOUNT`
 7. Copy your storage bucket name (format: `your-project.appspot.com`) to `FIREBASE_STORAGE_BUCKET`
@@ -161,13 +161,13 @@ cd frontend
 npm run dev
 ```
 
-### ≡ƒÄë Access the Application
+### 🌐 Access the Application
 
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:5000
 - **API Health Check**: http://localhost:5000/health
 
-## ≡ƒöæ Test Credentials
+## 🔐 Test Credentials
 
 **Test accounts are pre-configured and displayed on the login page for easy access!**
 
@@ -182,12 +182,12 @@ Password: Test123!
 
 **Explore:**
 
-- Γ£ô Create and manage innovative project ideas
-- Γ£ô Set milestones and track funding progress
-- Γ£ô Use AI assistant to refine your pitch
-- Γ£ô Receive notifications when investors show interest
-- Γ£ô Chat with potential investors
-- Γ£ô View your reputation score and impact metrics
+- ✓ Create and manage innovative project ideas
+- ✓ Set milestones and track funding progress
+- ✓ Use AI assistant to refine your pitch
+- ✓ Receive notifications when investors show interest
+- ✓ Chat with potential investors
+- ✓ View your reputation score and impact metrics
 
 ### Investor Account
 
@@ -198,13 +198,13 @@ Password: Test123!
 
 **Explore:**
 
-- Γ£ô Browse and discover innovative projects
-- Γ£ô Filter ideas by category, stage, and funding needs
-- Γ£ô Like and comment on ideas
-- Γ£ô View investment dashboard and leaderboards
-- Γ£ô Message innovators directly
-- Γ£ô Track projects you're interested in
-- Γ£ô Receive notifications for matching opportunities
+- ✓ Browse and discover innovative projects
+- ✓ Filter ideas by category, stage, and funding needs
+- ✓ Like and comment on ideas
+- ✓ View investment dashboard and leaderboards
+- ✓ Message innovators directly
+- ✓ Track projects you're interested in
+- ✓ Receive notifications for matching opportunities
 
 ### Pre-loaded Demo Data
 
@@ -219,7 +219,7 @@ When you log in with test accounts, you'll find:
 
 **No setup required** - accounts are ready to use immediately!
 
-## ≡ƒùé∩╕Å Project Structure
+## 📁 Project Structure
 
 ```
 InnovateFund/
@@ -241,7 +241,7 @@ InnovateFund/
 ΓööΓöÇΓöÇ README.md
 ```
 
-## ≡ƒöÉ Environment Variables
+## ⚙️ Environment Variables
 
 ### Backend Configuration (`backend/.env`)
 
@@ -286,7 +286,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ### Security Best Practices
 
-ΓÜá∩╕Å **IMPORTANT**:
+⚠️ **IMPORTANT**:
 
 - Never commit `.env` files to version control
 - Use strong, randomly generated JWT secrets (minimum 32 characters)
@@ -295,7 +295,7 @@ VITE_API_URL=http://localhost:5000/api
 - Enable Firebase security rules to protect storage
 - Use MongoDB authentication and IP whitelisting in production
 
-## ∩┐╜ API Documentation
+## 📚 API Documentation
 
 ### Base URL
 
@@ -395,7 +395,7 @@ Content-Type: application/json
 }
 ```
 
-## ≡ƒÜÇ Deployment Guide
+## 🚀 Deployment Guide
 
 For comprehensive deployment instructions across multiple platforms, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
@@ -447,7 +447,7 @@ curl -X POST https://your-backend.railway.app/api/auth/login \
   -d '{"email":"investor@test.com","password":"Test123!"}'
 ```
 
-## ≡ƒôè Project Architecture
+## 🏗️ Project Architecture
 
 ### High-Level Architecture
 
@@ -475,7 +475,7 @@ curl -X POST https://your-backend.railway.app/api/auth/login \
 5. **File Uploads**: Direct upload to Firebase, URL stored in MongoDB
 6. **Notifications**: Emitted via Socket.IO, persisted in database for offline delivery
 
-## ≡ƒñ¥ Contributing
+## 🤝 Contributing
 
 We welcome contributions from the community! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
@@ -495,7 +495,7 @@ We welcome contributions from the community! Please read our [CONTRIBUTING.md](C
 - Update documentation for new features
 - Test your changes thoroughly before submitting
 
-## ≡ƒöÆ Security
+## 🔒 Security
 
 Security is a top priority. Please read our [SECURITY.md](SECURITY.md) for:
 
@@ -506,11 +506,11 @@ Security is a top priority. Please read our [SECURITY.md](SECURITY.md) for:
 
 **Found a security issue?** Please email: nirooppapani8305@gmail.com
 
-## ≡ƒôä License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## ≡ƒæ¿ΓÇì≡ƒÆ╗ Author
+## 👨‍💻 Author
 
 **Niroop Papani**
 
@@ -518,7 +518,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Email: nirooppapani8305@gmail.com
 - Portfolio: [Your Portfolio URL]
 
-## ≡ƒÖÅ Acknowledgments
+## 🙏 Acknowledgments
 
 - [Cohere AI](https://cohere.com/) - For powering the AI assistant functionality
 - [Firebase](https://firebase.google.com/) - For reliable cloud storage
@@ -526,7 +526,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Socket.IO](https://socket.io/) - For real-time communication
 - All open-source contributors and maintainers
 
-## ≡ƒô╕ Screenshots & Demo
+## 📸 Screenshots & Demo
 
 ### Landing Page
 
@@ -546,7 +546,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 > **Note**: Replace placeholder images with actual screenshots of your application
 
-## ≡ƒÉ¢ Known Issues & Limitations
+## 🐛 Known Issues & Limitations
 
 - Email verification not yet implemented (planned for v2.0)
 - Payment integration for actual funding pending (Stripe integration planned)
@@ -555,7 +555,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Found a bug?** Please [open an issue](https://github.com/Niroop8305/InnovateFund/issues) with detailed reproduction steps.
 
-## ≡ƒö« Roadmap & Future Enhancements
+## 🗺️ Roadmap & Future Enhancements
 
 ### Version 2.0 (Q1 2026)
 
@@ -578,7 +578,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] AI-powered investment recommendations
 - [ ] Integration with LinkedIn and other platforms
 
-## ≡ƒÆí Use Cases
+## 💼 Use Cases
 
 ### For Startup Founders
 
@@ -596,7 +596,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 "Connect your portfolio companies with the right investors. Track progress and measure impact."
 
-## ≡ƒôê Performance & Scalability
+## ⚡ Performance & Scalability
 
 - **Response Time**: Average API response < 200ms
 - **Real-time Latency**: Socket.IO messages < 50ms
@@ -605,7 +605,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Horizontal Scaling**: Stateless architecture enables easy scaling
 - **CDN Integration**: Firebase serves static assets from global edge locations
 
-## ≡ƒº¬ Testing
+## 🧪 Testing
 
 ```bash
 # Run backend tests (when implemented)
@@ -620,24 +620,24 @@ npm test
 npm run test:e2e
 ```
 
-## ≡ƒô₧ Support & Contact
+## 📞 Support & Contact
 
 - **Documentation**: [Full Documentation](https://github.com/Niroop8305/InnovateFund/wiki)
 - **Issues**: [GitHub Issues](https://github.com/Niroop8305/InnovateFund/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Niroop8305/InnovateFund/discussions)
 - **Email**: nirooppapani8305@gmail.com
 
-## Γ¡É Show Your Support
+## ⭐ Show Your Support
 
 If you find this project useful, please consider:
 
-- Giving it a Γ¡É on GitHub
+- Giving it a ⭐ on GitHub
 - Sharing it with your network
 - Contributing to the codebase
 - Reporting bugs and suggesting features
 
 ---
 
-**Built with Γ¥ñ∩╕Å by [Niroop Papani](https://github.com/Niroop8305)**
+**Built with ❤️ by [Niroop Papani](https://github.com/Niroop8305)**
 
 _Empowering innovation, one connection at a time._
