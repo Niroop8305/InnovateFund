@@ -39,7 +39,7 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
             "X-Title": "InnovateFund AI Assistant", // Optional but recommended
           },
           timeout: 45000, // 45 seconds for AI processing
-        }
+        },
       );
 
       const aiMessage =
@@ -57,12 +57,19 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
       lastError = error;
 
       // If it's a rate limit error (429), try next model immediately
-      if (error?.response?.status === 429 || error?.response?.data?.error?.code === 429) {
+      if (
+        error?.response?.status === 429 ||
+        error?.response?.data?.error?.code === 429
+      ) {
         continue;
       }
 
       // For "no endpoints" or "provider error", skip to next model quickly
-      if (errorMsg.includes("No endpoints") || errorMsg.includes("Provider returned error") || errorMsg.includes("rate-limited")) {
+      if (
+        errorMsg.includes("No endpoints") ||
+        errorMsg.includes("Provider returned error") ||
+        errorMsg.includes("rate-limited")
+      ) {
         continue;
       }
 
@@ -93,22 +100,36 @@ export const openrouterChat = async (req, res) => {
     res.json({ response: aiMessage });
   } catch (error) {
     console.error("OpenRouter API error:", error?.response?.data || error);
-    
+
     // Provide user-friendly error messages
-    let errorMessage = "I apologize, but I'm temporarily unavailable. Please try again in a moment.";
-    
-    if (error?.response?.status === 401 || error?.response?.data?.error?.code === 401) {
+    let errorMessage =
+      "I apologize, but I'm temporarily unavailable. Please try again in a moment.";
+
+    if (
+      error?.response?.status === 401 ||
+      error?.response?.data?.error?.code === 401
+    ) {
       errorMessage = "AI service configuration error. Please contact support.";
-      console.error("CRITICAL: Invalid OpenRouter API key. Please update OPENROUTER_API_KEY in environment variables.");
-    } else if (error?.response?.status === 429 || error?.response?.data?.error?.code === 429) {
-      errorMessage = "I'm experiencing high demand right now. Please wait a moment and try again.";
-    } else if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
-      errorMessage = "The request took too long. Please try again with a shorter message.";
+      console.error(
+        "CRITICAL: Invalid OpenRouter API key. Please update OPENROUTER_API_KEY in environment variables.",
+      );
+    } else if (
+      error?.response?.status === 429 ||
+      error?.response?.data?.error?.code === 429
+    ) {
+      errorMessage =
+        "I'm experiencing high demand right now. Please wait a moment and try again.";
+    } else if (
+      error?.code === "ECONNABORTED" ||
+      error?.message?.includes("timeout")
+    ) {
+      errorMessage =
+        "The request took too long. Please try again with a shorter message.";
     }
-    
-    res.status(error?.response?.status || 500).json({ 
+
+    res.status(error?.response?.status || 500).json({
       error: errorMessage,
-      details: error?.response?.data?.error?.message || error.message 
+      details: error?.response?.data?.error?.message || error.message,
     });
   }
 };
@@ -131,15 +152,18 @@ export const getImpactScore = async (req, res) => {
     res.json({ impactScore: aiMessage });
   } catch (error) {
     console.error("OpenRouter API error:", error?.response?.data || error);
-    
+
     let errorMessage = "Unable to calculate impact score. Please try again.";
-    if (error?.response?.status === 429 || error?.response?.data?.error?.code === 429) {
+    if (
+      error?.response?.status === 429 ||
+      error?.response?.data?.error?.code === 429
+    ) {
       errorMessage = "Service is busy. Please try again in a moment.";
     }
-    
-    res.status(error?.response?.status || 500).json({ 
+
+    res.status(error?.response?.status || 500).json({
       error: errorMessage,
-      details: error?.response?.data?.error?.message || error.message 
+      details: error?.response?.data?.error?.message || error.message,
     });
   }
 };

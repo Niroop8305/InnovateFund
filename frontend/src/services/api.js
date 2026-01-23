@@ -21,8 +21,8 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     // Log for debugging in production
-    if (import.meta.env.MODE === 'production') {
-      console.log('API Request:', {
+    if (import.meta.env.MODE === "production") {
+      console.log("API Request:", {
         url: config.url,
         method: config.method,
         hasToken: !!token,
@@ -32,16 +32,19 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     // Log detailed error for debugging
-    if (import.meta.env.MODE === 'production' && error.response?.status === 401) {
-      console.error('401 Error Details:', {
+    if (
+      import.meta.env.MODE === "production" &&
+      error.response?.status === 401
+    ) {
+      console.error("401 Error Details:", {
         url: error.config?.url,
         message: error.response?.data?.message,
         hasAuthHeader: !!error.config?.headers?.Authorization,
       });
     }
-    
+
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor
@@ -51,10 +54,11 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       // Only logout if it's an auth-related endpoint or explicit authentication failure
       // Don't logout on AI timeouts or other transient errors
-      const isAuthEndpoint = error.config?.url?.includes('/auth/');
-      const isAuthError = error.response?.data?.message?.toLowerCase().includes('token') ||
-                         error.response?.data?.message?.toLowerCase().includes('unauthorized');
-      
+      const isAuthEndpoint = error.config?.url?.includes("/auth/");
+      const isAuthError =
+        error.response?.data?.message?.toLowerCase().includes("token") ||
+        error.response?.data?.message?.toLowerCase().includes("unauthorized");
+
       if (isAuthEndpoint || isAuthError) {
         // Token expired or invalid
         localStorage.removeItem("authToken");
@@ -62,7 +66,7 @@ axiosInstance.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // API service object
@@ -161,7 +165,8 @@ export const api = {
   // AI endpoints (with extended timeout)
   ai: {
     chat: (data) => axiosInstance.post("/ai/chat", data, { timeout: 60000 }), // 60 second timeout for AI
-    getImpactScore: (data) => axiosInstance.post("/ai/impact-score", data, { timeout: 60000 }),
+    getImpactScore: (data) =>
+      axiosInstance.post("/ai/impact-score", data, { timeout: 60000 }),
   },
 };
 
