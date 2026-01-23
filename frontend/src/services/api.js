@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
+  withCredentials: true, // Important for CORS with credentials
   headers: {
     "Content-Type": "application/json",
   },
@@ -19,9 +20,26 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Log for debugging in production
+    if (import.meta.env.MODE === 'production') {
+      console.log('API Request:', {
+        url: config.url,
+        method: config.method,
+        hasToken: !!token,
+      });
+    }
     return config;
   },
   (error) => {
+    // Log detailed error for debugging
+    if (import.meta.env.MODE === 'production' && error.response?.status === 401) {
+      console.error('401 Error Details:', {
+        url: error.config?.url,
+        message: error.response?.data?.message,
+        hasAuthHeader: !!error.config?.headers?.Authorization,
+      });
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -31,9 +49,17 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem("authToken");
-      window.location.href = "/login";
+      // Only logout if it's an auth-related endpoint or explicit authentication failure
+      // Don't logout on AI timeouts or other transient errors
+      const isAuthEndpoint = error.config?.url?.includes('/auth/');
+      const isAuthError = error.response?.data?.message?.toLowerCase().includes('token') ||
+                         error.response?.data?.message?.toLowerCase().includes('unauthorized');
+      
+      if (isAuthEndpoint || isAuthError) {
+        // Token expired or invalid
+        localStorage.removeItem("authToken");
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
@@ -132,10 +158,10 @@ export const api = {
       axiosInstance.post("/notifications/fcm-token", { token }),
   },
 
-  // AI endpoints
+  // AI endpoints (with extended timeout)
   ai: {
-    chat: (data) => axiosInstance.post("/ai/chat", data),
-    getImpactScore: (data) => axiosInstance.post("/ai/impact-score", data),
+    chat: (data) => axiosInstance.post("/ai/chat", data, { timeout: 60000 }), // 60 second timeout for AI
+    getImpactScore: (data) => axiosInstance.post("/ai/impact-score", data, { timeout: 60000 }),
   },
 };
 

@@ -34,12 +34,12 @@ const requiredEnvVars = [
 ];
 
 const missingEnvVars = requiredEnvVars.filter(
-  (varName) => !process.env[varName]
+  (varName) => !process.env[varName],
 );
 if (missingEnvVars.length > 0) {
   console.error(
     "Missing required environment variables:",
-    missingEnvVars.join(", ")
+    missingEnvVars.join(", "),
   );
   console.error("Please check your .env file.");
   process.exit(1);
@@ -51,7 +51,7 @@ const server = createServer(app);
 // Configure allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://innovate-fund.vercel.app"
+  "https://innovate-fund.vercel.app",
 ];
 
 const io = new Server(server, {
@@ -84,7 +84,7 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
 
 // Rate limiting
@@ -151,4 +151,3 @@ process.on("SIGTERM", () => {
 });
 
 export { io };
-

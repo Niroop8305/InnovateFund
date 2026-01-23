@@ -4,21 +4,23 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
 
 // List of fallback models to try if primary model is rate-limited
-// Ordered by reliability and speed
+// Ordered by reliability and speed - Updated with more available free models
 const AI_MODELS = [
+  "google/gemini-2.0-flash-exp:free",
+  "meta-llama/llama-3.1-8b-instruct:free",
+  "google/gemini-flash-1.5-8b:free",
   "mistralai/mistral-7b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
   "meta-llama/llama-3.2-3b-instruct:free",
   "qwen/qwen-2-7b-instruct:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
 ];
 
 // Helper function to try multiple models with fallback
 async function tryMultipleModels(messages, modelList = AI_MODELS) {
   let lastError = null;
 
-  // Try first 2 models only to reduce wait time
-  const modelsToTry = modelList.slice(0, 2);
+  // Try first 3 models to increase success rate
+  const modelsToTry = modelList.slice(0, 3);
 
   for (const model of modelsToTry) {
     try {
@@ -33,8 +35,10 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
           headers: {
             Authorization: `Bearer ${OPENROUTER_API_KEY}`,
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://innovate-fund.vercel.app", // Optional but recommended
+            "X-Title": "InnovateFund AI Assistant", // Optional but recommended
           },
-          timeout: 15000, // Reduced to 15 seconds
+          timeout: 45000, // 45 seconds for AI processing
         }
       );
 
@@ -48,7 +52,8 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
         return aiMessage;
       }
     } catch (error) {
-      console.log(`Model ${model} failed:`, error?.response?.data?.error?.message || error.message);
+      const errorMsg = error?.response?.data?.error?.message || error.message;
+      console.log(`Model ${model} failed:`, errorMsg);
       lastError = error;
 
       // If it's a rate limit error (429), try next model immediately
@@ -57,8 +62,7 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
       }
 
       // For "no endpoints" or "provider error", skip to next model quickly
-      const errorMsg = error?.response?.data?.error?.message || "";
-      if (errorMsg.includes("No endpoints") || errorMsg.includes("Provider returned error")) {
+      if (errorMsg.includes("No endpoints") || errorMsg.includes("Provider returned error") || errorMsg.includes("rate-limited")) {
         continue;
       }
 
@@ -93,7 +97,10 @@ export const openrouterChat = async (req, res) => {
     // Provide user-friendly error messages
     let errorMessage = "I apologize, but I'm temporarily unavailable. Please try again in a moment.";
     
-    if (error?.response?.status === 429 || error?.response?.data?.error?.code === 429) {
+    if (error?.response?.status === 401 || error?.response?.data?.error?.code === 401) {
+      errorMessage = "AI service configuration error. Please contact support.";
+      console.error("CRITICAL: Invalid OpenRouter API key. Please update OPENROUTER_API_KEY in environment variables.");
+    } else if (error?.response?.status === 429 || error?.response?.data?.error?.code === 429) {
       errorMessage = "I'm experiencing high demand right now. Please wait a moment and try again.";
     } else if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
       errorMessage = "The request took too long. Please try again with a shorter message.";

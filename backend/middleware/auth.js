@@ -6,6 +6,11 @@ export const authMiddleware = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      console.log('Auth failed: No token provided', {
+        path: req.path,
+        method: req.method,
+        origin: req.headers.origin,
+      });
       return res.status(401).json({ message: 'No token provided' });
     }
 
@@ -13,13 +18,21 @@ export const authMiddleware = async (req, res, next) => {
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
+      console.log('Auth failed: User not found for token', {
+        path: req.path,
+        userId: decoded.id,
+      });
       return res.status(401).json({ message: 'Invalid token' });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Auth middleware error:', {
+      message: error.message,
+      path: req.path,
+      hasToken: !!req.header('Authorization'),
+    });
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
