@@ -63,7 +63,7 @@ const io = new Server(server, {
         return;
       }
       const isAllowed = allowedOrigins.some((allowed) =>
-        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+        typeof allowed === "string" ? allowed === origin : allowed.test(origin),
       );
       if (isAllowed) {
         callback(null, true);
@@ -78,14 +78,7 @@ const io = new Server(server, {
 
 // Connect to MongoDB
 connectDB();
-) {
-        callback(null, true);
-        return;
-      }
-      const isAllowed = allowedOrigins.some((allowed) =>
-        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
-      );
-      if (isAllowed
+
 // Security middleware
 app.use(helmet());
 app.use(

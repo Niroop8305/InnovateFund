@@ -4,23 +4,25 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_API_URL = process.env.OPENROUTER_API_URL;
 
 // List of fallback models to try if primary model is rate-limited
-// Ordered by reliability and speed - Updated with more available free models
+// Using most reliable free models as of 2026
 const AI_MODELS = [
-  "google/gemini-2.0-flash-exp:free",
-  "meta-llama/llama-3.1-8b-instruct:free",
-  "google/gemini-flash-1.5-8b:free",
-  "mistralai/mistral-7b-instruct:free",
+  "google/gemini-flash-1.5:free",
+  "google/gemini-pro-1.5:free",
+  "meta-llama/llama-3.2-1b-instruct:free",
+  "microsoft/phi-3-medium-128k-instruct:free",
   "microsoft/phi-3-mini-128k-instruct:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
-  "qwen/qwen-2-7b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  // Fallback to paid models if free ones fail (cost-effective)
+  "meta-llama/llama-3.1-8b-instruct",
+  "mistralai/mistral-7b-instruct",
 ];
 
 // Helper function to try multiple models with fallback
 async function tryMultipleModels(messages, modelList = AI_MODELS) {
   let lastError = null;
 
-  // Try first 3 models to increase success rate
-  const modelsToTry = modelList.slice(0, 3);
+  // Try all free models first (first 6), then fallback to cheap paid models
+  const modelsToTry = modelList;
 
   for (const model of modelsToTry) {
     try {
@@ -53,27 +55,17 @@ async function tryMultipleModels(messages, modelList = AI_MODELS) {
       }
     } catch (error) {
       const errorMsg = error?.response?.data?.error?.message || error.message;
-      console.log(`Model ${model} failed:`, errorMsg);
+      const errorCode =
+        error?.response?.status || error?.response?.data?.error?.code;
+      console.log(`Model ${model} failed (${errorCode}):`, errorMsg);
       lastError = error;
 
-      // If it's a rate limit error (429), try next model immediately
-      if (
-        error?.response?.status === 429 ||
-        error?.response?.data?.error?.code === 429
-      ) {
-        continue;
+      // If authentication error, don't try other models
+      if (errorCode === 401 || errorCode === 403) {
+        throw error;
       }
 
-      // For "no endpoints" or "provider error", skip to next model quickly
-      if (
-        errorMsg.includes("No endpoints") ||
-        errorMsg.includes("Provider returned error") ||
-        errorMsg.includes("rate-limited")
-      ) {
-        continue;
-      }
-
-      // For other errors, also try next model
+      // For all other errors (404, 429, 500, etc.), try next model
       continue;
     }
   }
@@ -103,13 +95,15 @@ export const openrouterChat = async (req, res) => {
 
     // Provide user-friendly error messages
     let errorMessage =
-      "I apologize, but I'm temporarily unavailable. Please try again in a moment.";
+      "I apologize, but I'm temporarily unavailable. All AI models are currently experiencing issues. Please try again in a few minutes.";
+    let statusCode = 503;
 
     if (
       error?.response?.status === 401 ||
       error?.response?.data?.error?.code === 401
     ) {
       errorMessage = "AI service configuration error. Please contact support.";
+      statusCode = 500;
       console.error(
         "CRITICAL: Invalid OpenRouter API key. Please update OPENROUTER_API_KEY in environment variables.",
       );
@@ -119,17 +113,29 @@ export const openrouterChat = async (req, res) => {
     ) {
       errorMessage =
         "I'm experiencing high demand right now. Please wait a moment and try again.";
+      statusCode = 429;
     } else if (
       error?.code === "ECONNABORTED" ||
       error?.message?.includes("timeout")
     ) {
       errorMessage =
         "The request took too long. Please try again with a shorter message.";
+      statusCode = 504;
+    } else if (
+      error?.response?.data?.error?.message?.includes("No endpoints") ||
+      error?.response?.data?.error?.code === 404
+    ) {
+      errorMessage =
+        "AI service is temporarily unavailable. Our team has been notified. Please try again later.";
+      statusCode = 503;
     }
 
-    res.status(error?.response?.status || 500).json({
+    res.status(statusCode).json({
       error: errorMessage,
-      details: error?.response?.data?.error?.message || error.message,
+      details:
+        process.env.NODE_ENV === "development"
+          ? error?.response?.data?.error?.message || error.message
+          : undefined,
     });
   }
 };
@@ -154,16 +160,29 @@ export const getImpactScore = async (req, res) => {
     console.error("OpenRouter API error:", error?.response?.data || error);
 
     let errorMessage = "Unable to calculate impact score. Please try again.";
+    let statusCode = 503;
+
     if (
       error?.response?.status === 429 ||
       error?.response?.data?.error?.code === 429
     ) {
       errorMessage = "Service is busy. Please try again in a moment.";
+      statusCode = 429;
+    } else if (
+      error?.response?.data?.error?.message?.includes("No endpoints") ||
+      error?.response?.data?.error?.code === 404
+    ) {
+      errorMessage =
+        "AI service is temporarily unavailable. Please try again later.";
+      statusCode = 503;
     }
 
-    res.status(error?.response?.status || 500).json({
+    res.status(statusCode).json({
       error: errorMessage,
-      details: error?.response?.data?.error?.message || error.message,
+      details:
+        process.env.NODE_ENV === "development"
+          ? error?.response?.data?.error?.message || error.message
+          : undefined,
     });
   }
 };
