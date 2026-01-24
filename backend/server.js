@@ -52,12 +52,20 @@ const server = createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://innovate-fund.vercel.app",
+  /\.vercel\.app$/, // Allow all Vercel preview deployments
 ];
 
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const isAllowed = allowedOrigins.some((allowed) =>
+        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+      );
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -70,7 +78,14 @@ const io = new Server(server, {
 
 // Connect to MongoDB
 connectDB();
-
+) {
+        callback(null, true);
+        return;
+      }
+      const isAllowed = allowedOrigins.some((allowed) =>
+        typeof allowed === "string" ? allowed === origin : allowed.test(origin)
+      );
+      if (isAllowed
 // Security middleware
 app.use(helmet());
 app.use(
