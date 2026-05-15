@@ -40,7 +40,7 @@ const InvestorsPage = () => {
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery(
     "investorLeaderboard",
     () => api.investors.getLeaderboard({ page: 1, limit: 50 }),
-    { enabled: activeTab === "leaderboard" }
+    { enabled: activeTab === "leaderboard" },
   );
 
   // Fetch sector-specific ideas for investor rooms
@@ -52,16 +52,16 @@ const InvestorsPage = () => {
         activeTab === "rooms" &&
         selectedSector &&
         user?.userType === "investor",
-    }
+    },
   );
 
   const investors = leaderboardData?.data?.investors || [];
   const sectorIdeas = sectorData?.data?.ideas || [];
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -90,8 +90,8 @@ const InvestorsPage = () => {
                   rank === 1
                     ? "bg-yellow-500"
                     : rank === 2
-                    ? "bg-gray-400"
-                    : "bg-orange-500"
+                      ? "bg-gray-400"
+                      : "bg-orange-500"
                 }`}
               >
                 {rank}
@@ -226,7 +226,7 @@ const InvestorsPage = () => {
             style={{
               width: `${Math.min(
                 100,
-                (idea.currentFunding / idea.fundingGoal) * 100
+                (idea.currentFunding / idea.fundingGoal) * 100,
               )}%`,
             }}
           />
@@ -317,7 +317,7 @@ const InvestorsPage = () => {
                         .includes(searchQuery.toLowerCase()) ||
                       investor.company
                         ?.toLowerCase()
-                        .includes(searchQuery.toLowerCase())
+                        .includes(searchQuery.toLowerCase()),
                   )
                   .map((investor, index) => (
                     <InvestorCard

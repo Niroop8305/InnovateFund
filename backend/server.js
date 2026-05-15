@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 
 import connectDB from "./config/database.js";
 import "./config/firebase.js";
+import { initTestUsers } from "./initTestUsers.js";
 
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
@@ -17,6 +18,8 @@ import investorRoutes from "./routes/investors.js";
 import chatRoutes from "./routes/chat.js";
 import notificationRoutes from "./routes/notifications.js";
 import aiRoutes from "./routes/ai.js";
+import paymentRoutes from "./routes/payments.js";
+import adminRoutes from "./routes/admin.js";
 
 import { authMiddleware } from "./middleware/auth.js";
 import { setupSocketHandlers } from "./controllers/socketController.js";
@@ -78,6 +81,7 @@ const io = new Server(server, {
 
 // Connect to MongoDB
 connectDB();
+initTestUsers();
 
 // Security middleware
 app.use(helmet());
@@ -106,7 +110,14 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
@@ -117,6 +128,8 @@ app.use("/api/investors", authMiddleware, investorRoutes);
 app.use("/api/chat", authMiddleware, chatRoutes);
 app.use("/api/notifications", authMiddleware, notificationRoutes);
 app.use("/api/ai", authMiddleware, aiRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", authMiddleware, adminRoutes);
 
 // Health check
 app.get("/health", (req, res) => {

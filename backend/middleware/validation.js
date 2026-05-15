@@ -47,7 +47,7 @@ export const schemas = {
         "environment",
         "social",
         "consumer",
-        "enterprise"
+        "enterprise",
       )
       .required(),
     stage: Joi.string()
@@ -69,6 +69,25 @@ export const schemas = {
   makeInvestment: Joi.object({
     amount: Joi.number().min(100).max(10000000).required(),
     message: Joi.string().max(500).trim().optional().allow(""),
+  }),
+
+  createPaymentOrder: Joi.object({
+    ideaId: Joi.string().required(),
+    amount: Joi.number().min(100).max(10000000).required(),
+    terms: Joi.string().max(500).trim().optional().allow(""),
+  }),
+
+  verifyPayment: Joi.object({
+    transactionId: Joi.string().required(),
+    orderId: Joi.string().required(),
+    paymentId: Joi.string().required(),
+    signature: Joi.string().required(),
+    terms: Joi.string().max(500).trim().optional().allow(""),
+  }),
+
+  refundPayment: Joi.object({
+    transactionId: Joi.string().required(),
+    amount: Joi.number().min(1).optional(),
   }),
 
   updateProfile: Joi.object({

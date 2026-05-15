@@ -70,16 +70,16 @@ const IdeasPage = () => {
         stage: selectedStage || undefined,
         sortBy,
       }),
-    { keepPreviousData: true }
+    { keepPreviousData: true },
   );
 
   const ideas = ideasData?.data?.ideas || [];
   const pagination = ideasData?.data?.pagination || {};
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -133,7 +133,7 @@ const IdeasPage = () => {
         <div className="absolute top-3 left-3">
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(
-              idea.stage
+              idea.stage,
             )}`}
           >
             {idea.stage}
@@ -169,7 +169,7 @@ const IdeasPage = () => {
               style={{
                 width: `${Math.min(
                   100,
-                  (idea.currentFunding / idea.fundingGoal) * 100
+                  (idea.currentFunding / idea.fundingGoal) * 100,
                 )}%`,
               }}
             />
@@ -368,7 +368,7 @@ const IdeasPage = () => {
                             {page}
                           </button>
                         );
-                      }
+                      },
                     )}
                   </div>
 

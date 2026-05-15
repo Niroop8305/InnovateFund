@@ -41,9 +41,11 @@ export const SocketProvider = ({ children }) => {
       import.meta.env.VITE_SOCKET_URL ||
       (RAW_API_URL
         ? RAW_API_URL.replace(/\/?api\/?$/, "")
-        : typeof window !== "undefined"
-        ? window.location.origin
-        : "http://localhost:5000");
+        : import.meta.env.DEV
+          ? "http://localhost:5000"
+          : typeof window !== "undefined"
+            ? window.location.origin
+            : "http://localhost:5000");
     const socketInstance = io(SOCKET_URL, {
       auth: { token },
       transports: ["websocket"], // force websocket to avoid long-poll race issues

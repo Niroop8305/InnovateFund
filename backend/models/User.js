@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ["innovator", "investor"],
+      enum: ["innovator", "investor", "admin"],
       required: true,
     },
     profilePicture: {
@@ -100,6 +100,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
     lastActive: {
       type: Date,
       default: Date.now,
@@ -111,7 +115,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Hash password before saving

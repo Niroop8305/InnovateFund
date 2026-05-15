@@ -1,216 +1,307 @@
-import express from 'express';
-import { Chat, Message } from '../models/Chat.js';
-import { validateRequest, schemas } from '../middleware/validation.js';
-import { io } from '../server.js';
-import { getMessagesFromFirestore, addMessageToFirestore } from '../utils/firebaseChat.js';
-import { syncMessageToMongo } from '../services/chatSyncWorker.js';
-import User from '../models/User.js';
+import express from "express";
+import { Chat, Message } from "../models/Chat.js";
+import { validateRequest, schemas } from "../middleware/validation.js";
+import { io } from "../server.js";
+import {
+  getMessagesFromFirestore,
+  addMessageToFirestore,
+} from "../utils/firebaseChat.js";
+import { syncMessageToMongo } from "../services/chatSyncWorker.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
 // Get all chats for current user
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const chats = await Chat.find({
-      participants: req.user._id
+      participants: req.user._id,
     })
-      .populate('participants', 'name profilePicture lastActive')
-      .populate('lastMessage')
+      .populate("participants", "name profilePicture lastActive")
+      .populate("lastMessage")
       .sort({ lastActivity: -1 });
 
     res.json({ chats });
-
   } catch (error) {
-    console.error('Get chats error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get chats error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // Get or create chat between users
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const { participantId } = req.body;
 
     if (!participantId) {
-      return res.status(400).json({ message: 'Participant ID is required' });
+      return res.status(400).json({ message: "Participant ID is required" });
     }
 
     if (participantId === req.user._id.toString()) {
-      return res.status(400).json({ message: 'Cannot create chat with yourself' });
+      return res
+        .status(400)
+        .json({ message: "Cannot create chat with yourself" });
     }
 
     // Check if chat already exists
     let chat = await Chat.findOne({
       participants: { $all: [req.user._id, participantId] },
-      isGroupChat: false
-    }).populate('participants', 'name profilePicture lastActive');
+      isGroupChat: false,
+    }).populate("participants", "name profilePicture lastActive");
 
     if (!chat) {
       // Create new chat
       chat = new Chat({
         participants: [req.user._id, participantId],
-        isGroupChat: false
+        isGroupChat: false,
       });
 
       await chat.save();
-      await chat.populate('participants', 'name profilePicture lastActive');
+      await chat.populate("participants", "name profilePicture lastActive");
     }
 
     res.json({ chat });
-
   } catch (error) {
-    console.error('Create chat error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Create chat error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // Get messages for a specific chat
-router.get('/:chatId/messages', async (req, res) => {
+router.get("/:chatId/messages", async (req, res) => {
   try {
-    const { limit = 50 } = req.query; // page ignored for Firestore simple fetch
+    const { limit = 50, page = 1 } = req.query; // page ignored for Firestore simple fetch
+    const parsedLimit = Number.parseInt(limit, 10) || 50;
+    const parsedPage = Number.parseInt(page, 10) || 1;
 
     const chat = await Chat.findById(req.params.chatId);
     if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
+      return res.status(404).json({ message: "Chat not found" });
     }
     if (!chat.participants.includes(req.user._id)) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    // Fetch from Firestore
-    let rawMessages = [];
+    // Fetch from Firestore, fallback to Mongo on auth errors
     try {
-      rawMessages = await getMessagesFromFirestore(req.params.chatId, parseInt(limit));
+      const rawMessages = await getMessagesFromFirestore(
+        req.params.chatId,
+        parsedLimit,
+      );
+
+      // Collect unique senderIds and fetch user profiles from Mongo
+      const senderIds = [...new Set(rawMessages.map((m) => m.senderId))];
+      const users = await User.find({ _id: { $in: senderIds } }).select(
+        "name profilePicture",
+      );
+      const userMap = new Map(users.map((u) => [u._id.toString(), u]));
+
+      const messages = rawMessages.map((m) => ({
+        _id: m._id,
+        chat: m.chat,
+        sender: userMap.get(m.senderId)?.toObject
+          ? userMap.get(m.senderId)
+          : { _id: m.senderId, name: "Unknown User" },
+        content: m.content,
+        messageType: m.messageType,
+        createdAt: m.createdAt,
+        readBy: m.readBy || [],
+        edited: m.edited,
+        editedAt: m.editedAt,
+      }));
+
+      return res.json({
+        messages,
+        pagination: {
+          currentPage: 1,
+          totalPages: 1,
+          totalItems: messages.length,
+        },
+      });
     } catch (e) {
-      console.error('[ChatRoute] Firestore fetch error:', e.message);
-      return res.status(500).json({ message: 'Server error' });
+      console.error("[ChatRoute] Firestore fetch error:", e.message);
+      // Continue with Mongo fallback
     }
 
-    // Collect unique senderIds and fetch user profiles from Mongo
-    const senderIds = [...new Set(rawMessages.map(m => m.senderId))];
-    const users = await User.find({ _id: { $in: senderIds } }).select('name profilePicture');
-    const userMap = new Map(users.map(u => [u._id.toString(), u]));
+    const totalItems = await Message.countDocuments({
+      chat: req.params.chatId,
+    });
+    const totalPages = Math.max(1, Math.ceil(totalItems / parsedLimit));
+    const mongoMessages = await Message.find({ chat: req.params.chatId })
+      .populate("sender", "name profilePicture")
+      .sort({ createdAt: -1 })
+      .skip((parsedPage - 1) * parsedLimit)
+      .limit(parsedLimit)
+      .lean();
 
-    const messages = rawMessages.map(m => ({
+    const messages = mongoMessages.reverse().map((m) => ({
       _id: m._id,
       chat: m.chat,
-      sender: userMap.get(m.senderId)?.toObject ? userMap.get(m.senderId) : { _id: m.senderId, name: 'Unknown User' },
+      sender: m.sender || { _id: m.sender, name: "Unknown User" },
       content: m.content,
       messageType: m.messageType,
       createdAt: m.createdAt,
       readBy: m.readBy || [],
       edited: m.edited,
-      editedAt: m.editedAt
+      editedAt: m.editedAt,
     }));
 
     res.json({
       messages,
       pagination: {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: messages.length
-      }
+        currentPage: parsedPage,
+        totalPages,
+        totalItems,
+      },
     });
   } catch (error) {
-    console.error('Get messages (Firestore) error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get messages (Firestore) error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // Send message
-router.post('/:chatId/messages', validateRequest(schemas.sendMessage), async (req, res) => {
-  try {
-    const { content, messageType = 'text' } = req.body;
-    const { chatId } = req.params;
-
-    const chat = await Chat.findById(chatId);
-    if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
-    }
-    if (!chat.participants.includes(req.user._id)) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    // Write to Firestore for real-time messaging
-    let fbMessage;
+router.post(
+  "/:chatId/messages",
+  validateRequest(schemas.sendMessage),
+  async (req, res) => {
     try {
-      fbMessage = await addMessageToFirestore(chatId, {
-        senderId: req.user._id.toString(),
-        content,
-        messageType
-      });
-    } catch (e) {
-      if (e.message === 'FIREBASE_NOT_INITIALIZED') {
-        return res.status(503).json({ message: 'Realtime messaging not configured' });
+      const { content, messageType = "text" } = req.body;
+      const { chatId } = req.params;
+
+      const chat = await Chat.findById(chatId);
+      if (!chat) {
+        return res.status(404).json({ message: "Chat not found" });
       }
-      throw e;
+      if (!chat.participants.includes(req.user._id)) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const sender = await User.findById(req.user._id).select(
+        "name profilePicture",
+      );
+
+      // Write to Firestore for real-time messaging, fallback to Mongo if unavailable
+      let apiMessage;
+      try {
+        const fbMessage = await addMessageToFirestore(chatId, {
+          senderId: req.user._id.toString(),
+          content,
+          messageType,
+        });
+
+        apiMessage = {
+          _id: fbMessage._id,
+          chat: chatId,
+          sender,
+          content,
+          messageType,
+          createdAt: fbMessage.createdAt,
+          readBy: fbMessage.readBy,
+          edited: false,
+          editedAt: null,
+        };
+
+        // Fire-and-forget sync to Mongo for archival & lastMessage reference
+        setImmediate(() => {
+          syncMessageToMongo(fbMessage, chatId);
+        });
+      } catch (e) {
+        if (e.message === "FIREBASE_NOT_INITIALIZED") {
+          console.warn(
+            "[ChatRoute] Firestore not initialized; using Mongo fallback.",
+          );
+        } else {
+          console.warn(
+            "[ChatRoute] Firestore send error; using Mongo fallback:",
+            e.message,
+          );
+        }
+
+        const mongoMessage = await Message.create({
+          chat: chatId,
+          sender: req.user._id,
+          content,
+          messageType,
+          readBy: [{ user: req.user._id, readAt: new Date() }],
+        });
+
+        await Chat.findByIdAndUpdate(chatId, {
+          lastMessage: mongoMessage._id,
+          lastActivity: new Date(),
+        });
+
+        apiMessage = {
+          _id: mongoMessage._id,
+          chat: chatId,
+          sender,
+          content,
+          messageType,
+          createdAt: mongoMessage.createdAt,
+          readBy: mongoMessage.readBy,
+          edited: mongoMessage.edited,
+          editedAt: mongoMessage.editedAt || null,
+        };
+      }
+
+      // Emit to other participants via Socket.IO
+      const otherParticipants = chat.participants.filter(
+        (p) => p.toString() !== req.user._id.toString(),
+      );
+      otherParticipants.forEach((participantId) => {
+        io.to(`user_${participantId}`).emit("new_message", {
+          chatId,
+          message: apiMessage,
+        });
+      });
+      // Also emit to chat room for participants currently viewing it
+      io.to(`chat_${chatId}`).emit("new_message", {
+        chatId,
+        message: apiMessage,
+      });
+
+      res.status(201).json({ message: apiMessage });
+    } catch (error) {
+      console.error(
+        "Send message (Firestore) error:",
+        error.message,
+        error.stack,
+      );
+      res.status(500).json({ message: "Server error" });
     }
-
-    // Populate sender object for response consistency
-    const sender = await User.findById(req.user._id).select('name profilePicture');
-    const apiMessage = {
-      _id: fbMessage._id,
-      chat: chatId,
-      sender,
-      content,
-      messageType,
-      createdAt: fbMessage.createdAt,
-      readBy: fbMessage.readBy,
-      edited: false,
-      editedAt: null
-    };
-
-    // Fire-and-forget sync to Mongo for archival & lastMessage reference
-    setImmediate(() => {
-      syncMessageToMongo(fbMessage, chatId);
-    });
-
-    // Emit to other participants via Socket.IO
-    const otherParticipants = chat.participants.filter(p => p.toString() !== req.user._id.toString());
-    otherParticipants.forEach(participantId => {
-      io.to(`user_${participantId}`).emit('new_message', { chatId, message: apiMessage });
-    });
-    // Also emit to chat room for participants currently viewing it
-    io.to(`chat_${chatId}`).emit('new_message', { chatId, message: apiMessage });
-
-    res.status(201).json({ message: apiMessage });
-  } catch (error) {
-    console.error('Send message (Firestore) error:', error.message, error.stack);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+  },
+);
 
 // Mark messages as read
-router.post('/:chatId/read', async (req, res) => {
+router.post("/:chatId/read", async (req, res) => {
   try {
     const { chatId } = req.params;
-    
+
     const chat = await Chat.findById(chatId);
-    
+
     if (!chat) {
-      return res.status(404).json({ message: 'Chat not found' });
+      return res.status(404).json({ message: "Chat not found" });
     }
 
     // Check if user is participant
     if (!chat.participants.includes(req.user._id)) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ message: "Access denied" });
     }
 
     await Message.updateMany(
-      { 
+      {
         chat: chatId,
-        'readBy.user': { $ne: req.user._id }
+        "readBy.user": { $ne: req.user._id },
       },
-      { 
-        $push: { readBy: { user: req.user._id, readAt: new Date() } }
-      }
+      {
+        $push: { readBy: { user: req.user._id, readAt: new Date() } },
+      },
     );
 
-    res.json({ message: 'Messages marked as read' });
-
+    res.json({ message: "Messages marked as read" });
   } catch (error) {
-    console.error('Mark read error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Mark read error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

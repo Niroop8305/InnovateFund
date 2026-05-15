@@ -45,7 +45,7 @@ const ProfilePage = () => {
       onError: (error) => {
         toast.error(error.response?.data?.message || "Failed to update idea");
       },
-    }
+    },
   );
 
   const handleEditIdea = (idea) => {
@@ -87,12 +87,20 @@ const ProfilePage = () => {
   const { data: profileResponse, isLoading } = useQuery(
     ["profile", profileId],
     () => api.users.getProfile(profileId),
-    { enabled: !!profileId }
+    { enabled: !!profileId },
   );
 
   const profile = profileResponse?.data?.user;
   const ideas = profileResponse?.data?.ideas || [];
   const investments = profileResponse?.data?.investments || [];
+
+  const { data: transactionsData, isLoading: transactionsLoading } = useQuery(
+    ["transactions", profileId],
+    () => api.payments.getTransactions({ page: 1, limit: 10 }),
+    { enabled: isOwnProfile && profile?.userType === "investor" },
+  );
+
+  const transactions = transactionsData?.data?.transactions || [];
 
   // Update profile mutation
   const updateProfileMutation = useMutation(
@@ -106,10 +114,10 @@ const ProfilePage = () => {
       },
       onError: (error) => {
         toast.error(
-          error.response?.data?.message || "Failed to update profile"
+          error.response?.data?.message || "Failed to update profile",
         );
       },
-    }
+    },
   );
 
   // Upload profile picture mutation
@@ -123,10 +131,10 @@ const ProfilePage = () => {
       },
       onError: (error) => {
         toast.error(
-          error.response?.data?.message || "Failed to upload picture"
+          error.response?.data?.message || "Failed to upload picture",
         );
       },
-    }
+    },
   );
 
   const handleEditProfile = () => {
@@ -157,9 +165,9 @@ const ProfilePage = () => {
 
   const formatCurrency = (amount) => {
     const safeAmount = Number(amount);
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(isNaN(safeAmount) ? 0 : safeAmount);
@@ -324,7 +332,7 @@ const ProfilePage = () => {
                   <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                     {ideas.reduce(
                       (sum, idea) => sum + (idea.likes?.length || 0),
-                      0
+                      0,
                     )}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-slate-400">
@@ -335,7 +343,7 @@ const ProfilePage = () => {
                   <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                     {ideas.reduce(
                       (sum, idea) => sum + (Number(idea.views) || 0),
-                      0
+                      0,
                     )}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-slate-400">
@@ -347,8 +355,8 @@ const ProfilePage = () => {
                     {formatCurrency(
                       ideas.reduce(
                         (sum, idea) => sum + (Number(idea.currentFunding) || 0),
-                        0
-                      )
+                        0,
+                      ),
                     )}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-slate-400">
@@ -479,7 +487,7 @@ const ProfilePage = () => {
                         value={
                           typeof editIdeaData.title === "string"
                             ? editIdeaData.title
-                            : editIdeaData.title ?? ""
+                            : (editIdeaData.title ?? "")
                         }
                         onChange={(e) =>
                           setEditIdeaData((prev) => ({
@@ -493,7 +501,7 @@ const ProfilePage = () => {
                         value={
                           typeof editIdeaData.category === "string"
                             ? editIdeaData.category
-                            : editIdeaData.category ?? ""
+                            : (editIdeaData.category ?? "")
                         }
                         onChange={(e) =>
                           setEditIdeaData((prev) => ({
@@ -508,7 +516,7 @@ const ProfilePage = () => {
                       value={
                         typeof editIdeaData.stage === "string"
                           ? editIdeaData.stage
-                          : editIdeaData.stage ?? ""
+                          : (editIdeaData.stage ?? "")
                       }
                       onChange={(e) =>
                         setEditIdeaData((prev) => ({
@@ -518,7 +526,7 @@ const ProfilePage = () => {
                       }
                     />
                     <Input
-                      label="Funding Goal ($)"
+                      label="Funding Goal (INR)"
                       type="number"
                       value={
                         editIdeaData.fundingGoal === undefined ||
@@ -555,7 +563,7 @@ const ProfilePage = () => {
                       value={
                         typeof editIdeaData.tags === "string"
                           ? editIdeaData.tags
-                          : editIdeaData.tags ?? ""
+                          : (editIdeaData.tags ?? "")
                       }
                       onChange={(e) =>
                         setEditIdeaData((prev) => ({
@@ -614,9 +622,9 @@ const ProfilePage = () => {
                           {profile.investmentRange?.min != null &&
                           profile.investmentRange?.max != null
                             ? `${formatCurrency(
-                                Number(profile.investmentRange.min) || 0
+                                Number(profile.investmentRange.min) || 0,
                               )} - ${formatCurrency(
-                                Number(profile.investmentRange.max) || 0
+                                Number(profile.investmentRange.max) || 0,
                               )}`
                             : "Not specified"}
                         </p>
@@ -698,10 +706,10 @@ const ProfilePage = () => {
                           {profile.reputationScore >= 80
                             ? "🏆 Top Investor"
                             : profile.reputationScore >= 60
-                            ? "⭐ Active Investor"
-                            : profile.reputationScore >= 40
-                            ? "📈 Growing"
-                            : "🌱 New Investor"}
+                              ? "⭐ Active Investor"
+                              : profile.reputationScore >= 40
+                                ? "📈 Growing"
+                                : "🌱 New Investor"}
                         </div>
                       </div>
                     </div>
@@ -757,7 +765,7 @@ const ProfilePage = () => {
                               </p>
                               <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
                                 {formatCurrency(
-                                  Number(idea.investmentAmount) || 0
+                                  Number(idea.investmentAmount) || 0,
                                 )}
                               </p>
                             </div>
@@ -767,7 +775,7 @@ const ProfilePage = () => {
                               </p>
                               <p className="text-sm font-semibold text-gray-900 dark:text-slate-200">
                                 {formatCurrency(
-                                  Number(idea.currentFunding) || 0
+                                  Number(idea.currentFunding) || 0,
                                 )}{" "}
                                 /{" "}
                                 {formatCurrency(Number(idea.fundingGoal) || 0)}
@@ -790,6 +798,59 @@ const ProfilePage = () => {
                       No investments yet
                     </p>
                   </div>
+                )}
+              </motion.div>
+            )}
+
+            {isOwnProfile && profile.userType === "investor" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 p-6"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-primary-600" />
+                  Transaction History
+                </h2>
+
+                {transactionsLoading ? (
+                  <div className="flex justify-center py-6">
+                    <LoadingSpinner size="md" />
+                  </div>
+                ) : transactions.length > 0 ? (
+                  <div className="space-y-3">
+                    {transactions.map((tx) => (
+                      <div
+                        key={tx._id}
+                        className="flex items-center justify-between border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800/60"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                            {tx.idea?.title || "Idea"}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
+                            {new Date(tx.createdAt).toLocaleDateString()} •{" "}
+                            {tx.status}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-primary-600 dark:text-primary-400">
+                            {formatCurrency(Number(tx.amount) || 0)}
+                          </p>
+                          {tx.paymentId && (
+                            <p className="text-xs text-gray-500 dark:text-slate-400">
+                              Payment ID: {tx.paymentId.slice(-6)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-slate-500">
+                    No transactions yet.
+                  </p>
                 )}
               </motion.div>
             )}
@@ -937,7 +998,7 @@ const ProfilePage = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
-                    label="Minimum ($)"
+                    label="Minimum (INR)"
                     type="number"
                     placeholder="10000"
                     value={profileData.investmentRange?.min || ""}
@@ -952,7 +1013,7 @@ const ProfilePage = () => {
                     }
                   />
                   <Input
-                    label="Maximum ($)"
+                    label="Maximum (INR)"
                     type="number"
                     placeholder="100000"
                     value={profileData.investmentRange?.max || ""}

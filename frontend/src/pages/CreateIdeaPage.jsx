@@ -142,7 +142,7 @@ const CreateIdeaPage = () => {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
       const match = categories.find((c) =>
-        normalizedCategories.includes(c.toLowerCase())
+        normalizedCategories.includes(c.toLowerCase()),
       );
       if (match) {
         setValue("category", match, {
@@ -154,7 +154,7 @@ const CreateIdeaPage = () => {
     }
     if (data.stage) {
       const matchStage = stages.find(
-        (s) => s.toLowerCase() === data.stage.toString().toLowerCase()
+        (s) => s.toLowerCase() === data.stage.toString().toLowerCase(),
       );
       if (matchStage) {
         setValue("stage", matchStage, {
@@ -511,7 +511,7 @@ const CreateIdeaPage = () => {
 
                 <div className="max-w-md">
                   <Input
-                    label="Funding Goal ($)"
+                    label="Funding Goal (INR)"
                     type="number"
                     min="1000"
                     step="1000"
@@ -521,12 +521,12 @@ const CreateIdeaPage = () => {
                       required: "Funding goal is required",
                       min: {
                         value: 1000,
-                        message: "Minimum funding goal is $1,000",
+                        message: "Minimum funding goal is INR 1,000",
                       },
                     })}
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Minimum funding goal is $1,000
+                    Minimum funding goal is INR 1,000
                   </p>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Idea from "../models/Idea.js";
 import { uploadFileToFirebase } from "../utils/helpers.js";
 import { validateRequest, schemas } from "../middleware/validation.js";
+import { cacheGet, cacheSet } from "../utils/redisClient.js";
 
 const router = express.Router();
 const upload = multer({
@@ -46,7 +47,7 @@ router.put("/notifications", async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { notificationsEnabled: !!enabled },
-      { new: true }
+      { new: true },
     ).select("-password -fcmToken");
     res.json({ message: "Notification preferences updated.", user });
   } catch (error) {
@@ -82,7 +83,7 @@ router.get("/profile/:id?", async (req, res) => {
     if (user.userType === "innovator") {
       ideas = await Idea.find({ creator: userId })
         .select(
-          "title category stage currentFunding fundingGoal status createdAt likes"
+          "title category stage currentFunding fundingGoal status createdAt likes",
         )
         .sort({ createdAt: -1 })
         .limit(10);
@@ -93,16 +94,16 @@ router.get("/profile/:id?", async (req, res) => {
     if (user.userType === "investor") {
       investments = await Idea.find({ "investments.investor": userId })
         .select(
-          "title category stage currentFunding fundingGoal status createdAt creator investments"
+          "title category stage currentFunding fundingGoal status createdAt creator investments",
         )
         .populate("creator", "name profilePicture")
         .sort({ "investments.investedAt": -1 })
         .limit(20);
-      
+
       // Filter and add investment details for this investor
-      investments = investments.map(idea => {
+      investments = investments.map((idea) => {
         const investment = idea.investments.find(
-          inv => inv.investor.toString() === userId.toString()
+          (inv) => inv.investor.toString() === userId.toString(),
         );
         return {
           ...idea.toObject(),
@@ -120,52 +121,59 @@ router.get("/profile/:id?", async (req, res) => {
 });
 
 // Update user profile
-router.put("/profile", validateRequest(schemas.updateProfile), async (req, res) => {
-  try {
-    const {
-      name,
-      bio,
-      location,
-      company,
-      website,
-      linkedinProfile,
-      expertise,
-      sectorsOfInterest,
-      investmentRange,
-      notificationsEnabled,
-    } = req.body;
+router.put(
+  "/profile",
+  validateRequest(schemas.updateProfile),
+  async (req, res) => {
+    try {
+      const {
+        name,
+        bio,
+        location,
+        company,
+        website,
+        linkedinProfile,
+        expertise,
+        sectorsOfInterest,
+        investmentRange,
+        notificationsEnabled,
+      } = req.body;
 
-    const updateData = {};
+      const updateData = {};
 
-    if (name !== undefined) updateData.name = name;
-    if (bio !== undefined) updateData.bio = bio;
-    if (location !== undefined) updateData.location = location;
-    if (company !== undefined) updateData.company = company;
-    if (website !== undefined) updateData.website = website;
-    if (linkedinProfile !== undefined)
-      updateData.linkedinProfile = linkedinProfile;
-    if (expertise !== undefined) updateData.expertise = expertise;
-    if (sectorsOfInterest !== undefined) updateData.sectorsOfInterest = sectorsOfInterest;
-    if (investmentRange !== undefined) updateData.investmentRange = investmentRange;
-    if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
+      if (name !== undefined) updateData.name = name;
+      if (bio !== undefined) updateData.bio = bio;
+      if (location !== undefined) updateData.location = location;
+      if (company !== undefined) updateData.company = company;
+      if (website !== undefined) updateData.website = website;
+      if (linkedinProfile !== undefined)
+        updateData.linkedinProfile = linkedinProfile;
+      if (expertise !== undefined) updateData.expertise = expertise;
+      if (sectorsOfInterest !== undefined)
+        updateData.sectorsOfInterest = sectorsOfInterest;
+      if (investmentRange !== undefined)
+        updateData.investmentRange = investmentRange;
+      if (notificationsEnabled !== undefined)
+        updateData.notificationsEnabled = notificationsEnabled;
 
-    const user = await User.findByIdAndUpdate(req.user._id, updateData, {
-      new: true,
-      runValidators: true,
-    }).select("-password -fcmToken");
+      const user = await User.findByIdAndUpdate(req.user._id, updateData, {
+        new: true,
+        runValidators: true,
+      }).select("-password -fcmToken");
 
-    res.json({
-      message: "Profile updated successfully",
-      user,
-    });
-  } catch (error) {
-    console.error("Update profile error:", error);
-    res.status(400).json({
-      message: "Update failed",
-      error: error.message,
-    });
-  }
-});
+      res.json({
+        message: "Profile updated successfully",
+        user,
+      });
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(400).json({
+        message: "Update failed",
+        error: error.message,
+      });
+    }
+  },
+);
 
 // Upload profile picture
 router.post(
@@ -179,7 +187,7 @@ router.post(
 
       const imageUrl = await uploadFileToFirebase(
         req.file,
-        `profiles/${req.user._id}`
+        `profiles/${req.user._id}`,
       );
 
       req.user.profilePicture = imageUrl;
@@ -193,7 +201,7 @@ router.post(
       console.error("Upload profile picture error:", error);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 // Search users
@@ -220,7 +228,7 @@ router.get("/search", async (req, res) => {
 
     const users = await User.find(filter)
       .select(
-        "name profilePicture company bio userType sectorsOfInterest reputationScore"
+        "name profilePicture company bio userType sectorsOfInterest reputationScore",
       )
       .skip(parseInt(skip))
       .limit(parseInt(limit));
@@ -244,6 +252,12 @@ router.get("/search", async (req, res) => {
 // Get user statistics
 router.get("/stats", async (req, res) => {
   try {
+    const cacheKey = `user:stats:${req.user._id.toString()}`;
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const stats = {};
 
     if (req.user.userType === "innovator") {
@@ -251,15 +265,15 @@ router.get("/stats", async (req, res) => {
 
       stats.totalIdeas = ideas.length;
       stats.publishedIdeas = ideas.filter(
-        (idea) => idea.status === "published"
+        (idea) => idea.status === "published",
       ).length;
       stats.totalFunding = ideas.reduce(
         (sum, idea) => sum + idea.currentFunding,
-        0
+        0,
       );
       stats.totalLikes = ideas.reduce(
         (sum, idea) => sum + idea.likes.length,
-        0
+        0,
       );
       stats.totalViews = ideas.reduce((sum, idea) => sum + idea.views, 0);
     } else if (req.user.userType === "investor") {
@@ -271,14 +285,16 @@ router.get("/stats", async (req, res) => {
       stats.successfulInvestments = req.user.successfulInvestments;
       stats.totalInvested = investedIdeas.reduce((sum, idea) => {
         const investment = idea.investments.find(
-          (inv) => inv.investor.toString() === req.user._id.toString()
+          (inv) => inv.investor.toString() === req.user._id.toString(),
         );
         return sum + (investment ? investment.amount : 0);
       }, 0);
       stats.reputationScore = req.user.reputationScore;
     }
 
-    res.json({ stats });
+    const payload = { stats };
+    await cacheSet(cacheKey, payload, 30);
+    res.json(payload);
   } catch (error) {
     console.error("Get stats error:", error);
     res.status(500).json({ message: "Server error" });

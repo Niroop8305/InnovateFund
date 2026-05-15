@@ -37,7 +37,12 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     try {
-      const result = await registerUser(data);
+      const { terms, ...payload } = data;
+      if (!payload.userType) {
+        payload.userType = selectedUserType;
+      }
+
+      const result = await registerUser(payload);
 
       if (result.success) {
         navigate("/dashboard");
@@ -110,7 +115,12 @@ const RegisterPage = () => {
                   <motion.button
                     key={option.value}
                     type="button"
-                    onClick={() => setSelectedUserType(option.value)}
+                    onClick={() => {
+                      setSelectedUserType(option.value);
+                      setValue("userType", option.value, {
+                        shouldValidate: true,
+                      });
+                    }}
                     className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-primary-300 transition-colors text-left group"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -145,7 +155,9 @@ const RegisterPage = () => {
               >
                 <input
                   type="hidden"
-                  {...register("userType", { value: selectedUserType })}
+                  {...register("userType", {
+                    required: "User type is required",
+                  })}
                 />
 
                 {errors.root && (

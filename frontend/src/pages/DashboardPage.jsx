@@ -26,30 +26,30 @@ const DashboardPage = () => {
   const { data: stats, isLoading: statsLoading } = useQuery(
     "userStats",
     api.users.getStats,
-    { enabled: !!user }
+    { enabled: !!user },
   );
 
   // Fetch recent ideas
   const { data: ideasData, isLoading: ideasLoading } = useQuery(
     "recentIdeas",
     () => api.ideas.getIdeas({ page: 1, limit: 6, sortBy: "createdAt" }),
-    { enabled: !!user }
+    { enabled: !!user },
   );
 
   // Fetch investor leaderboard
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery(
     "investorLeaderboard",
     () => api.investors.getLeaderboard({ page: 1, limit: 5 }),
-    { enabled: !!user }
+    { enabled: !!user },
   );
 
   const recentIdeas = ideasData?.data?.ideas || [];
   const topInvestors = leaderboardData?.data?.investors || [];
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -128,7 +128,7 @@ const DashboardPage = () => {
               style={{
                 width: `${Math.min(
                   100,
-                  (idea.currentFunding / idea.fundingGoal) * 100
+                  (idea.currentFunding / idea.fundingGoal) * 100,
                 )}%`,
               }}
             />

@@ -1,6 +1,6 @@
-import { bucket } from '../config/firebase.js';
-import path from 'path';
-import axios from 'axios'; // Add axios import
+import { bucket } from "../config/firebase.js";
+import path from "path";
+import axios from "axios"; // Add axios import
 
 export const uploadFileToFirebase = async (file, folderPath) => {
   if (!bucket) {
@@ -52,7 +52,7 @@ export const generateImpactScore = async (ideaData) => {
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     // Extract the score from the AI response
@@ -75,9 +75,9 @@ export const sanitizeFileName = (fileName) => {
 };
 
 export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);

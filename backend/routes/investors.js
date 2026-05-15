@@ -1,63 +1,76 @@
-import express from 'express';
-import User from '../models/User.js';
-import Idea from '../models/Idea.js';
-import { requireRole } from '../middleware/auth.js';
-import { validateRequest, schemas } from '../middleware/validation.js';
+import express from "express";
+import User from "../models/User.js";
+import Idea from "../models/Idea.js";
+import { requireRole } from "../middleware/auth.js";
+import { validateRequest, schemas } from "../middleware/validation.js";
 
 const router = express.Router();
 
 // Get investor leaderboard
-router.get('/leaderboard', async (req, res) => {
+router.get("/leaderboard", async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    const investors = await User.find({ userType: 'investor' })
-      .select('name profilePicture company totalInvestments successfulInvestments reputationScore sectorsOfInterest')
+    const investors = await User.find({ userType: "investor" })
+      .select(
+        "name profilePicture company totalInvestments successfulInvestments reputationScore sectorsOfInterest",
+      )
       .sort({ reputationScore: -1, totalInvestments: -1 })
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    const total = await User.countDocuments({ userType: 'investor' });
+    const total = await User.countDocuments({ userType: "investor" });
 
     res.json({
       investors,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
-        totalItems: total
-      }
+        totalItems: total,
+      },
     });
-
   } catch (error) {
-    console.error('Get leaderboard error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get leaderboard error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // Get sector-specific ideas for investor rooms
-router.get('/rooms/:sector', requireRole(['investor']), async (req, res) => {
+router.get("/rooms/:sector", requireRole(["investor"]), async (req, res) => {
   try {
     const { sector } = req.params;
     const { page = 1, limit = 12 } = req.query;
     const skip = (page - 1) * limit;
 
-    const validSectors = ['technology', 'healthcare', 'finance', 'education', 'environment', 'social', 'consumer', 'enterprise'];
-    
+    const validSectors = [
+      "technology",
+      "healthcare",
+      "finance",
+      "education",
+      "environment",
+      "social",
+      "consumer",
+      "enterprise",
+    ];
+
     if (!validSectors.includes(sector)) {
-      return res.status(400).json({ message: 'Invalid sector' });
+      return res.status(400).json({ message: "Invalid sector" });
     }
 
-    const ideas = await Idea.find({ 
-      category: sector, 
-      status: 'published' 
+    const ideas = await Idea.find({
+      category: sector,
+      status: "published",
     })
-      .populate('creator', 'name profilePicture company')
+      .populate("creator", "name profilePicture company")
       .sort({ createdAt: -1, impactScore: -1 })
       .skip(parseInt(skip))
       .limit(parseInt(limit));
 
-    const total = await Idea.countDocuments({ category: sector, status: 'published' });
+    const total = await Idea.countDocuments({
+      category: sector,
+      status: "published",
+    });
 
     res.json({
       sector,
@@ -65,100 +78,110 @@ router.get('/rooms/:sector', requireRole(['investor']), async (req, res) => {
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),
-        totalItems: total
-      }
+        totalItems: total,
+      },
     });
-
   } catch (error) {
-    console.error('Get sector room error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get sector room error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 // Make investment
-router.post('/invest/:ideaId', requireRole(['investor']), validateRequest(schemas.makeInvestment), async (req, res) => {
-  try {
-    const { amount, message } = req.body;
-    const { ideaId } = req.params;
+router.post(
+  "/invest/:ideaId",
+  requireRole(["investor"]),
+  validateRequest(schemas.makeInvestment),
+  async (req, res) => {
+    try {
+      const { amount, message } = req.body;
+      const { ideaId } = req.params;
 
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ message: 'Valid investment amount is required' });
-    }
-
-    const idea = await Idea.findById(ideaId);
-    if (!idea) {
-      return res.status(404).json({ message: 'Idea not found' });
-    }
-
-    // Check if already invested
-    const existingInvestment = idea.investments.find(inv => 
-      inv.investor.toString() === req.user._id.toString()
-    );
-
-    if (existingInvestment) {
-      return res.status(400).json({ message: 'You have already invested in this idea' });
-    }
-
-    // Add investment
-    idea.investments.push({
-      investor: req.user._id,
-      amount,
-      terms: terms || '',
-      investedAt: new Date()
-    });
-
-    idea.currentFunding += amount;
-    await idea.save();
-
-    // Update investor stats
-    req.user.totalInvestments += 1;
-    req.user.reputationScore = Math.min(100, req.user.reputationScore + 2);
-    await req.user.save();
-
-    // Send notification to idea creator
-    const { sendNotification } = await import('../controllers/notificationController.js');
-    await sendNotification({
-      recipient: idea.creator,
-      sender: req.user._id,
-      type: 'new_investment',
-      title: 'New Investment Received!',
-      message: `${req.user.name} invested $${amount.toLocaleString()} in your idea "${idea.title}"`,
-      relatedItem: {
-        itemType: 'idea',
-        itemId: idea._id
-      },
-      actionUrl: `/ideas/${idea._id}`
-    });
-
-    res.json({
-      message: 'Investment made successfully',
-      investment: {
-        amount,
-        terms,
-        investor: req.user.name,
-        investedAt: new Date()
+      if (!amount || amount <= 0) {
+        return res
+          .status(400)
+          .json({ message: "Valid investment amount is required" });
       }
-    });
 
-  } catch (error) {
-    console.error('Make investment error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+      const idea = await Idea.findById(ideaId);
+      if (!idea) {
+        return res.status(404).json({ message: "Idea not found" });
+      }
+
+      // Check if already invested
+      const existingInvestment = idea.investments.find(
+        (inv) => inv.investor.toString() === req.user._id.toString(),
+      );
+
+      if (existingInvestment) {
+        return res
+          .status(400)
+          .json({ message: "You have already invested in this idea" });
+      }
+
+      // Add investment
+      idea.investments.push({
+        investor: req.user._id,
+        amount,
+        terms: message || "",
+        investedAt: new Date(),
+      });
+
+      idea.currentFunding += amount;
+      await idea.save();
+
+      // Update investor stats
+      req.user.totalInvestments += 1;
+      req.user.reputationScore = Math.min(100, req.user.reputationScore + 2);
+      await req.user.save();
+
+      // Send notification to idea creator
+      const { sendNotification } =
+        await import("../controllers/notificationController.js");
+      await sendNotification({
+        recipient: idea.creator,
+        sender: req.user._id,
+        type: "new_investment",
+        title: "New Investment Received!",
+        message: `${req.user.name} invested ${amount.toLocaleString("en-IN")} INR in your idea "${idea.title}"`,
+        relatedItem: {
+          itemType: "idea",
+          itemId: idea._id,
+        },
+        actionUrl: `/ideas/${idea._id}`,
+      });
+
+      res.json({
+        message: "Investment made successfully",
+        investment: {
+          amount,
+          terms: message || "",
+          investor: req.user.name,
+          investedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error("Make investment error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  },
+);
 
 // Get investment history for current investor
-router.get('/my-investments', requireRole(['investor']), async (req, res) => {
+router.get("/my-investments", requireRole(["investor"]), async (req, res) => {
   try {
     const ideas = await Idea.find({
-      'investments.investor': req.user._id
+      "investments.investor": req.user._id,
     })
-      .populate('creator', 'name profilePicture company')
-      .select('title description category currentFunding fundingGoal status createdAt investments')
-      .sort({ 'investments.investedAt': -1 });
+      .populate("creator", "name profilePicture company")
+      .select(
+        "title description category currentFunding fundingGoal status createdAt investments",
+      )
+      .sort({ "investments.investedAt": -1 });
 
-    const investments = ideas.map(idea => {
-      const investment = idea.investments.find(inv => 
-        inv.investor.toString() === req.user._id.toString()
+    const investments = ideas.map((idea) => {
+      const investment = idea.investments.find(
+        (inv) => inv.investor.toString() === req.user._id.toString(),
       );
       return {
         idea: {
@@ -170,17 +193,16 @@ router.get('/my-investments', requireRole(['investor']), async (req, res) => {
           currentFunding: idea.currentFunding,
           fundingGoal: idea.fundingGoal,
           status: idea.status,
-          createdAt: idea.createdAt
+          createdAt: idea.createdAt,
         },
-        investment
+        investment,
       };
     });
 
     res.json({ investments });
-
   } catch (error) {
-    console.error('Get investments error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Get investments error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

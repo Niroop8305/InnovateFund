@@ -1,7 +1,9 @@
 import axios from "axios";
 
-// Prefer relative '/api' so Vite dev proxy and Vercel rewrites both work without extra config.
+// Use environment variable or fallback to relative '/api' for dev proxy
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
+console.log("API Base URL:", API_BASE_URL, "Mode:", import.meta.env.MODE);
 
 // Create axios instance
 const axiosInstance = axios.create({
@@ -162,11 +164,37 @@ export const api = {
       axiosInstance.post("/notifications/fcm-token", { token }),
   },
 
+  // Payment endpoints
+  payments: {
+    createOrder: (data) => axiosInstance.post("/payments/razorpay/order", data),
+    verifyPayment: (data) =>
+      axiosInstance.post("/payments/razorpay/verify", data),
+    getTransactions: (params) =>
+      axiosInstance.get("/payments/transactions", { params }),
+    requestRefund: (data) =>
+      axiosInstance.post("/payments/razorpay/refund", data),
+  },
+
   // AI endpoints (with extended timeout)
   ai: {
     chat: (data) => axiosInstance.post("/ai/chat", data, { timeout: 60000 }), // 60 second timeout for AI
     getImpactScore: (data) =>
       axiosInstance.post("/ai/impact-score", data, { timeout: 60000 }),
+  },
+
+  // Admin endpoints
+  admin: {
+    getUsers: (params) => axiosInstance.get("/admin/users", { params }),
+    banUser: (userId, banned) =>
+      axiosInstance.patch(`/admin/users/${userId}/ban`, { banned }),
+    verifyUser: (userId, isVerified) =>
+      axiosInstance.patch(`/admin/users/${userId}/verify`, { isVerified }),
+    getIdeas: (params) => axiosInstance.get("/admin/ideas", { params }),
+    approveIdea: (ideaId) =>
+      axiosInstance.patch(`/admin/ideas/${ideaId}/approve`),
+    rejectIdea: (ideaId, reason) =>
+      axiosInstance.patch(`/admin/ideas/${ideaId}/reject`, { reason }),
+    getMetrics: () => axiosInstance.get("/admin/metrics"),
   },
 };
 

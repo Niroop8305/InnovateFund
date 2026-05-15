@@ -6,12 +6,17 @@ import { requireRole } from "../middleware/auth.js";
 import { validateRequest, schemas } from "../middleware/validation.js";
 import { uploadFileToFirebase, generateImpactScore } from "../utils/helpers.js";
 import { sendNotification } from "../controllers/notificationController.js";
+import { cacheDel, cacheGet, cacheSet } from "../utils/redisClient.js";
 
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
+
+const clearIdeaCaches = async () => {
+  await cacheDel(["ideas:trending"]);
+};
 // Update (edit) an idea (only by creator)
 router.put("/:id", requireRole(["innovator"]), async (req, res) => {
   try {
@@ -30,8 +35,15 @@ router.put("/:id", requireRole(["innovator"]), async (req, res) => {
       "stage",
       "fundingGoal",
       "tags",
-      "status",
     ];
+    if (req.user.userType === "admin") {
+      allowedFields.push(
+        "status",
+        "rejectionReason",
+        "approvedAt",
+        "rejectedAt",
+      );
+    }
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         idea[field] = req.body[field];
@@ -59,6 +71,18 @@ router.get("/", async (req, res) => {
     } = req.query;
     const skip = (page - 1) * limit;
 
+    const cacheable = !search;
+    const cacheKey = cacheable
+      ? `ideas:list:${page}:${limit}:${category || "all"}:${stage || "all"}:${sortBy}`
+      : null;
+
+    if (cacheKey) {
+      const cached = await cacheGet(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+    }
+
     const filter = { status: "published" };
 
     if (category) filter.category = category;
@@ -84,7 +108,7 @@ router.get("/", async (req, res) => {
 
     const total = await Idea.countDocuments(filter);
 
-    res.json({
+    const payload = {
       ideas,
       pagination: {
         currentPage: parseInt(page),
@@ -93,9 +117,40 @@ router.get("/", async (req, res) => {
         hasNext: skip + limit < total,
         hasPrev: page > 1,
       },
-    });
+    };
+
+    if (cacheKey) {
+      await cacheSet(cacheKey, payload, 60);
+    }
+
+    res.json(payload);
   } catch (error) {
     console.error("Get ideas error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Trending ideas (cached)
+router.get("/trending", async (req, res) => {
+  try {
+    const { limit = 8 } = req.query;
+    const cacheKey = "ideas:trending";
+    const cached = await cacheGet(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const ideas = await Idea.find({ status: "published" })
+      .populate("creator", "name profilePicture company")
+      .sort({ currentFunding: -1, impactScore: -1, views: -1 })
+      .limit(parseInt(limit));
+
+    const payload = { ideas };
+    await cacheSet(cacheKey, payload, 120);
+
+    res.json(payload);
+  } catch (error) {
+    console.error("Get trending ideas error:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -112,6 +167,14 @@ router.get("/:id", async (req, res) => {
 
     if (!idea) {
       return res.status(404).json({ message: "Idea not found" });
+    }
+
+    if (
+      idea.status !== "published" &&
+      req.user.userType !== "admin" &&
+      idea.creator.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
     // Increment view count
@@ -152,10 +215,12 @@ router.post(
         tags: tags || [],
         creator: req.user._id,
         impactScore,
+        status: "pending",
       });
 
       await idea.save();
       await idea.populate("creator", "name profilePicture company");
+      await clearIdeaCaches();
 
       res.status(201).json({
         message: "Idea created successfully",
@@ -175,7 +240,7 @@ router.post(
       }
       res.status(500).json({ message: "Server error", details: error.message });
     }
-  }
+  },
 );
 
 // Upload files for idea
@@ -208,6 +273,7 @@ router.post("/:id/upload", upload.array("files", 5), async (req, res) => {
 
     idea.attachments.push(...uploadedFiles);
     await idea.save();
+    await clearIdeaCaches();
 
     res.json({
       message: "Files uploaded successfully",
@@ -229,13 +295,13 @@ router.post("/:id/like", async (req, res) => {
     }
 
     const existingLike = idea.likes.find(
-      (like) => like.user.toString() === req.user._id.toString()
+      (like) => like.user.toString() === req.user._id.toString(),
     );
 
     if (existingLike) {
       // Unlike
       idea.likes = idea.likes.filter(
-        (like) => like.user.toString() !== req.user._id.toString()
+        (like) => like.user.toString() !== req.user._id.toString(),
       );
     } else {
       // Like
@@ -259,6 +325,7 @@ router.post("/:id/like", async (req, res) => {
     }
 
     await idea.save();
+    await clearIdeaCaches();
 
     res.json({
       message: existingLike ? "Idea unliked" : "Idea liked",
@@ -318,7 +385,7 @@ router.post(
       console.error("Add comment error:", error);
       res.status(500).json({ message: "Server error" });
     }
-  }
+  },
 );
 
 // Request to join as collaborator
@@ -337,7 +404,7 @@ router.post("/:id/collaborate", async (req, res) => {
     }
 
     const existingCollaborator = idea.collaborators.find(
-      (collab) => collab.user.toString() === req.user._id.toString()
+      (collab) => collab.user.toString() === req.user._id.toString(),
     );
 
     if (existingCollaborator) {
