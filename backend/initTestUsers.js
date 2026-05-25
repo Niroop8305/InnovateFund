@@ -9,7 +9,6 @@ export async function initTestUsers() {
     // Check if test users already exist
     const innovatorExists = await User.findOne({ email: "innovator@test.com" });
     const investorExists = await User.findOne({ email: "investor@test.com" });
-    const adminExists = await User.findOne({ email: "admin@test.com" });
 
     // Create innovator if doesn't exist
     if (!innovatorExists) {
@@ -40,7 +39,7 @@ export async function initTestUsers() {
         password: "Test123!",
         userType: "investor",
         isVerified: true,
-        bio: "Venture capitalist focused on early-stage tech startups. INR 50Cr+ deployed across 30+ companies. Looking for high-impact innovations.",
+        bio: "Venture capitalist focused on early-stage tech startups. $50M+ deployed across 30+ companies. Looking for high-impact innovations.",
         location: "New York, NY",
         company: "Morgan Capital Partners",
         website: "https://morgancapital.com",
@@ -57,20 +56,7 @@ export async function initTestUsers() {
       console.log("✓ Test investor account created: investor@test.com");
     }
 
-    // Create admin if doesn't exist
-    if (!adminExists) {
-      const admin = new User({
-        name: "Admin",
-        email: "admin@test.com",
-        password: "Admin123!",
-        userType: "admin",
-        isVerified: true,
-      });
-      await admin.save();
-      console.log("✓ Admin account created: admin@test.com");
-    }
-
-    if (innovatorExists && investorExists && adminExists) {
+    if (innovatorExists && investorExists) {
       console.log("✓ Test accounts already exist and ready to use");
     }
   } catch (error) {

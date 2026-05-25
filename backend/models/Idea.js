@@ -123,23 +123,9 @@ const ideaSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [
-        "draft",
-        "pending",
-        "published",
-        "rejected",
-        "funded",
-        "cancelled",
-      ],
-      default: "pending",
+      enum: ["draft", "published", "funded", "cancelled"],
+      default: "draft",
     },
-    rejectionReason: {
-      type: String,
-      default: "",
-      maxlength: 500,
-    },
-    approvedAt: Date,
-    rejectedAt: Date,
     tags: [
       {
         type: String,
@@ -175,7 +161,7 @@ const ideaSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // Index for better search performance

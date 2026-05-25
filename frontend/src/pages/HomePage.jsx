@@ -46,7 +46,7 @@ const HomePage = () => {
 
   const stats = [
     { value: "10,000+", label: "Ideas Submitted" },
-    { value: "INR 50Cr+", label: "Funds Raised" },
+    { value: "$50M+", label: "Funds Raised" },
     { value: "5,000+", label: "Active Users" },
     { value: "95%", label: "Success Rate" },
   ];

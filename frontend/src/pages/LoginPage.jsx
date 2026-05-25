@@ -10,7 +10,6 @@ import {
   Lightbulb,
   UserCircle,
   Briefcase,
-  Shield,
   Copy,
   CheckCircle,
 } from "lucide-react";
@@ -151,30 +150,6 @@ const LoginPage = () => {
                       fillTestCredentials("investor@test.com", "Test123!")
                     }
                     className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors"
-                  >
-                    Use
-                  </button>
-                </div>
-
-                {/* Admin Account */}
-                <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-2 flex-1">
-                    <Shield className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-gray-900 dark:text-white">
-                        Admin
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        admin@test.com / Admin123!
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      fillTestCredentials("admin@test.com", "Admin123!")
-                    }
-                    className="px-3 py-1 text-xs bg-slate-800 hover:bg-slate-900 text-white rounded-md transition-colors"
                   >
                     Use
                   </button>

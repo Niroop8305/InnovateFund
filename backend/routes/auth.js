@@ -38,12 +38,12 @@ router.post(
       const token = jwt.sign(
         { id: user._id, userType: user.userType },
         process.env.JWT_SECRET || "fallback_secret",
-        { expiresIn: "7d" },
+        { expiresIn: "7d" }
       );
 
       // Fire and forget welcome email (don't block response)
       sendWelcomeEmail(user).catch((err) =>
-        console.error("Deferred welcome email error:", err.message),
+        console.error("Deferred welcome email error:", err.message)
       );
 
       res.status(201).json({
@@ -55,7 +55,7 @@ router.post(
       console.error("Registration error:", error);
       res.status(500).json({ message: "Server error during registration" });
     }
-  },
+  }
 );
 
 // Login
@@ -67,10 +67,6 @@ router.post("/login", validateRequest(schemas.login), async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    if (user.isBanned) {
-      return res.status(403).json({ message: "Account is banned" });
     }
 
     // Check password
@@ -87,7 +83,7 @@ router.post("/login", validateRequest(schemas.login), async (req, res) => {
     const token = jwt.sign(
       { id: user._id, userType: user.userType },
       process.env.JWT_SECRET || "fallback_secret",
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     res.json({
@@ -112,16 +108,12 @@ router.get("/me", async (req, res) => {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "fallback_secret",
+      process.env.JWT_SECRET || "fallback_secret"
     );
     const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.isBanned) {
-      return res.status(403).json({ message: "Account is banned" });
     }
 
     res.json({ user: user.toJSON() });

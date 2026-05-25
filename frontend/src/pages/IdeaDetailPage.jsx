@@ -34,18 +34,8 @@ const IdeaDetailPage = () => {
   const [investmentAmount, setInvestmentAmount] = useState("");
   const [investmentTerms, setInvestmentTerms] = useState("");
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const navigate = useNavigate();
-
-  // Fetch idea details
-  const { data: ideaData, isLoading } = useQuery(
-    ["idea", id],
-    () => api.ideas.getIdea(id),
-    { enabled: !!id },
-  );
-
-  const idea = ideaData?.data?.idea;
 
   // Helper: Build full context string for AI
   const buildIdeaContext = () => {
@@ -54,8 +44,8 @@ const IdeaDetailPage = () => {
     context += `📝 Description: ${idea.description}\n\n`;
     context += `🏷️ Category: ${idea.category}\n`;
     context += `🚀 Stage: ${idea.stage}\n`;
-    context += `💰 Funding Goal: INR ${idea.fundingGoal?.toLocaleString()}\n`;
-    context += `📊 Current Funding: INR ${idea.currentFunding?.toLocaleString()}\n`;
+    context += `💰 Funding Goal: $${idea.fundingGoal?.toLocaleString()}\n`;
+    context += `📊 Current Funding: $${idea.currentFunding?.toLocaleString()}\n`;
     context += `⭐ Impact Score: ${idea.impactScore}\n`;
     context += `👍 Likes: ${idea.likes?.length || 0}\n`;
     context += `💬 Comments: ${idea.comments?.length || 0}\n`;
@@ -113,6 +103,15 @@ const IdeaDetailPage = () => {
     navigate("/ai-assistant", { state: contextData });
   };
 
+  // Fetch idea details
+  const { data: ideaData, isLoading } = useQuery(
+    ["idea", id],
+    () => api.ideas.getIdea(id),
+    { enabled: !!id }
+  );
+
+  const idea = ideaData?.data?.idea;
+
   // Like idea mutation
   const likeMutation = useMutation(() => api.ideas.likeIdea(id), {
     onSuccess: () => {
@@ -136,24 +135,27 @@ const IdeaDetailPage = () => {
       onError: (error) => {
         toast.error(error.response?.data?.message || "Failed to add comment");
       },
-    },
+    }
   );
 
-  // Payment helpers
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (typeof window !== "undefined" && window.Razorpay) {
-        resolve(true);
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+  // Investment mutation
+  const investmentMutation = useMutation(
+    (data) => api.investors.makeInvestment(id, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["idea", id]);
+        setShowInvestmentModal(false);
+        setInvestmentAmount("");
+        setInvestmentTerms("");
+        toast.success("Investment made successfully!");
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.message || "Failed to make investment"
+        );
+      },
+    }
+  );
 
   // Collaboration request mutation
   const collaborationMutation = useMutation(
@@ -165,16 +167,16 @@ const IdeaDetailPage = () => {
       onError: (error) => {
         toast.error(
           error.response?.data?.message ||
-            "Failed to send collaboration request",
+            "Failed to send collaboration request"
         );
       },
-    },
+    }
   );
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "INR",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -202,80 +204,13 @@ const IdeaDetailPage = () => {
     }
   };
 
-  const handleInvestment = async (e) => {
+  const handleInvestment = (e) => {
     e.preventDefault();
-    if (!investmentAmount || parseFloat(investmentAmount) <= 0) return;
-
-    setPaymentLoading(true);
-
-    try {
-      const scriptReady = await loadRazorpayScript();
-      if (!scriptReady) {
-        toast.error("Failed to load Razorpay checkout");
-        setPaymentLoading(false);
-        return;
-      }
-
-      const orderResponse = await api.payments.createOrder({
-        ideaId: id,
+    if (investmentAmount && parseFloat(investmentAmount) > 0) {
+      investmentMutation.mutate({
         amount: parseFloat(investmentAmount),
         terms: investmentTerms,
       });
-
-      const { orderId, amount, currency, keyId, transactionId } =
-        orderResponse.data;
-
-      const razorpay = new window.Razorpay({
-        key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount,
-        currency: currency || "INR",
-        name: "InnovateFund",
-        description: `Investment in ${idea?.title || "Idea"}`,
-        order_id: orderId,
-        prefill: {
-          name: user?.name,
-          email: user?.email,
-        },
-        modal: {
-          ondismiss: () => setPaymentLoading(false),
-        },
-        handler: async (response) => {
-          try {
-            await api.payments.verifyPayment({
-              transactionId,
-              orderId: response.razorpay_order_id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-              terms: investmentTerms,
-            });
-
-            queryClient.invalidateQueries(["idea", id]);
-            setShowInvestmentModal(false);
-            setInvestmentAmount("");
-            setInvestmentTerms("");
-            toast.success("Investment completed successfully!");
-          } catch (error) {
-            toast.error(
-              error.response?.data?.message || "Payment verification failed.",
-            );
-          } finally {
-            setPaymentLoading(false);
-          }
-        },
-        theme: {
-          color: "#6B5BFF",
-        },
-      });
-
-      razorpay.on("payment.failed", (response) => {
-        toast.error(response.error?.description || "Payment failed");
-        setPaymentLoading(false);
-      });
-
-      razorpay.open();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to start payment");
-      setPaymentLoading(false);
     }
   };
 
@@ -379,7 +314,7 @@ const IdeaDetailPage = () => {
                     <div className="flex items-center space-x-2 mb-2">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(
-                          idea.stage,
+                          idea.stage
                         )}`}
                       >
                         {idea.stage}
@@ -740,7 +675,7 @@ const IdeaDetailPage = () => {
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(
-                              investment.investedAt,
+                              investment.investedAt
                             ).toLocaleDateString()}
                           </p>
                         </div>
@@ -766,7 +701,7 @@ const IdeaDetailPage = () => {
           <form onSubmit={handleInvestment} className="space-y-4">
             <div>
               <Input
-                label="Investment Amount (INR)"
+                label="Investment Amount ($)"
                 type="number"
                 min="1"
                 step="1"
@@ -802,7 +737,7 @@ const IdeaDetailPage = () => {
               <Button
                 type="submit"
                 className="flex-1"
-                loading={paymentLoading}
+                loading={investmentMutation.isLoading}
                 disabled={
                   !investmentAmount || parseFloat(investmentAmount) <= 0
                 }

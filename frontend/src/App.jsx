@@ -19,7 +19,6 @@ const InvestorsPage = React.lazy(() => import("./pages/InvestorsPage"));
 const ChatPage = React.lazy(() => import("./pages/ChatPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const AIAssistantPage = React.lazy(() => import("./pages/AIAssistantPage"));
-const AdminDashboardPage = React.lazy(() => import("./pages/AdminDashboard"));
 
 const SettingsPage = React.lazy(() => import("./pages/SettingsPage"));
 const NotificationsPage = React.lazy(() => import("./pages/NotificationsPage"));
@@ -52,25 +51,6 @@ const PublicRoute = ({ children }) => {
   }
 
   return user ? <Navigate to="/dashboard" /> : children;
-};
-
-// Admin-only route component
-const AdminRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
-  return user.userType === "admin" ? children : <Navigate to="/dashboard" />;
 };
 
 function App() {
@@ -194,14 +174,6 @@ function App() {
                 <ProtectedRoute>
                   <SettingsPage />
                 </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminDashboardPage />
-                </AdminRoute>
               }
             />
 

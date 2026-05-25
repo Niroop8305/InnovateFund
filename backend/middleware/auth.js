@@ -25,10 +25,6 @@ export const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    if (user.isBanned) {
-      return res.status(403).json({ message: "Account is banned" });
-    }
-
     req.user = user;
     next();
   } catch (error) {

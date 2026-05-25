@@ -15,7 +15,6 @@ import {
   X,
   Settings,
   TrendingUp,
-  Shield,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
@@ -39,10 +38,6 @@ const Navbar = () => {
     { name: "Chat", href: "/chat", icon: MessageSquare },
     { name: "AI Assistant", href: "/ai-assistant", icon: Bot },
   ];
-
-  if (user?.userType === "admin") {
-    navigationItems.unshift({ name: "Admin", href: "/admin", icon: Shield });
-  }
 
   const handleLogout = () => {
     logout();

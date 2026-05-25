@@ -164,37 +164,11 @@ export const api = {
       axiosInstance.post("/notifications/fcm-token", { token }),
   },
 
-  // Payment endpoints
-  payments: {
-    createOrder: (data) => axiosInstance.post("/payments/razorpay/order", data),
-    verifyPayment: (data) =>
-      axiosInstance.post("/payments/razorpay/verify", data),
-    getTransactions: (params) =>
-      axiosInstance.get("/payments/transactions", { params }),
-    requestRefund: (data) =>
-      axiosInstance.post("/payments/razorpay/refund", data),
-  },
-
   // AI endpoints (with extended timeout)
   ai: {
     chat: (data) => axiosInstance.post("/ai/chat", data, { timeout: 60000 }), // 60 second timeout for AI
     getImpactScore: (data) =>
       axiosInstance.post("/ai/impact-score", data, { timeout: 60000 }),
-  },
-
-  // Admin endpoints
-  admin: {
-    getUsers: (params) => axiosInstance.get("/admin/users", { params }),
-    banUser: (userId, banned) =>
-      axiosInstance.patch(`/admin/users/${userId}/ban`, { banned }),
-    verifyUser: (userId, isVerified) =>
-      axiosInstance.patch(`/admin/users/${userId}/verify`, { isVerified }),
-    getIdeas: (params) => axiosInstance.get("/admin/ideas", { params }),
-    approveIdea: (ideaId) =>
-      axiosInstance.patch(`/admin/ideas/${ideaId}/approve`),
-    rejectIdea: (ideaId, reason) =>
-      axiosInstance.patch(`/admin/ideas/${ideaId}/reject`, { reason }),
-    getMetrics: () => axiosInstance.get("/admin/metrics"),
   },
 };
 
